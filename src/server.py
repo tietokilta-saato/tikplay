@@ -1,5 +1,5 @@
 from statics import USAGE
-import database_interface
+from database import interface
 import datetime
 import pysoundcard
 import pysoundfile
@@ -63,7 +63,7 @@ class AudioParser():
 
     Parses song metadata, handles database updating, and pushes the audio to soundcard """
     def __init__(self):
-        self.di = database_interface.DatabaseInterface()
+        self.di = interface.DatabaseInterface()
 
     def find(self, keyword, search_from='filename'):
         """ Find a song from the database based on a certain keyword

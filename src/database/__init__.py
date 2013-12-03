@@ -1,9 +1,9 @@
 import sqlalchemy
-import json
+from json import loads
 
 
 with open('tikplay.conf', 'r') as conf:
-    configuration = json.loads(conf.readlines())
+    configuration = loads(conf.readlines())
 
 db = sqlalchemy.create_engine(configuration['db'])
 Base = sqlalchemy.ext.declarative.declarative_base()

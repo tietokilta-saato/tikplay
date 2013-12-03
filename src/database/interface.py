@@ -1,5 +1,5 @@
 from database import db
-from models import Song
+from database.models import Song
 
 
 class DatabaseInterface():

@@ -1,0 +1,8 @@
+#!/bin/bash
+echo -e "\\n\\n\\n\\n\\nSpeaksynth: $1" 1>&2
+festival --tts "$1" &
+festpid=$!
+trap "kill $festpid" TERM
+wait
+
+

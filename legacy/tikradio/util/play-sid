@@ -1,0 +1,7 @@
+#!/bin/bash
+echo -e "\\n\\n\\n\\n\\nPlaying sid: $1" 1>&2
+sidplay2 -os -f44101 -t5:00 "$1" &
+modpid=$!
+trap "kill $modpid" TERM
+wait
+

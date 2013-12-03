@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+cd ~/tikplay/tikkaki/
+export TERM
+~/tikradio/util/soita.sh kaki.puoli.mp3
+exit 0

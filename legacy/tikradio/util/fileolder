@@ -1,0 +1,8 @@
+#!/usr/bin/perl -w
+my $file = $ARGV[1];
+my $age = $ARGV[0];
+exit 1 unless -r $file;
+my (undef, undef, undef, undef, undef, undef, undef, undef, undef, $mtime, undef) = stat($file);
+my $currtime = time();
+exit 1 unless ($currtime - $age > $mtime);
+exit 0;

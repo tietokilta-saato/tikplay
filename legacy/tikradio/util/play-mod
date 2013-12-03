@@ -1,0 +1,7 @@
+#!/bin/bash
+echo -e "\\n\\n\\n\\n\\nPlaying mod: $1" 1>&2
+/usr/freeware/bin/mikmod -q -p 0 -o 16s -f 44100 "$1" &
+modpid=$!
+trap "kill $modpid" TERM
+wait
+

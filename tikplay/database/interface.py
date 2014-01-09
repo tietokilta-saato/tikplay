@@ -1,5 +1,5 @@
-from database import db
-from database.models import Song
+from tikplay.database import db
+from tikplay.database.models import Song
 
 
 class DatabaseInterface():

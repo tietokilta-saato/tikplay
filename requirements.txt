@@ -1,3 +1,5 @@
+pysoundfile
+pysoundcard
 SQLAlchemy==0.9.1
 requests==2.1.0
 virtualenv==1.11

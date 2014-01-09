@@ -3,6 +3,7 @@
 
 import logging
 
+
 class Retriever(object):
     def __init__(self, conf):
         self.name = "Unnamed retriever"

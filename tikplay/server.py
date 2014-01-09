@@ -1,10 +1,9 @@
-from statics import USAGE
-from database import interface
 import datetime
+import http.server
 import pysoundcard
 import pysoundfile
-import BaseHTTPServer
-import SocketServer
+from tikplay.statics import USAGE
+from tikplay.database import interface
 
 
 class Server():
@@ -23,10 +22,11 @@ class Server():
         pass
 
 
-class TIKPlayAPIHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+# noinspection PyPep8Naming
+class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
+        http.server.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
         self.ap = AudioParser()
-        BaseHTTPServer.BaseHTTPRequestHandler.__init__(*args, **kwargs)
 
     def do_GET(self):
         if '/hash/' in self.path and self.path.startswith('/play/'):
@@ -93,7 +93,7 @@ class AudioParser():
         """ Returns the song that is now playing in the format "Artist - Title" """
         pass
 
-    def POST_file(self, fp):
+    def post_file(self, fp):
         """ Save file to cache and add metadata to database
 
         Keyword arguments:

@@ -4,6 +4,7 @@
 import logging
 from threading import Thread
 
+
 class Task(Thread):
     """
     Represents the state of a URL retrieval task.

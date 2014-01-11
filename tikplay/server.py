@@ -1,8 +1,9 @@
 import datetime
 import http.server
-import threading
+import logging
 import pysoundcard
 import pysoundfile
+import threading
 from tikplay.statics import USAGE
 from tikplay.database import interface
 
@@ -12,25 +13,32 @@ class Server():
     def __init__(self, host='', port=5000, server_class=http.server.HTTPServer):
         self.__server = server_class((host, port), TikplayAPIHandler)
         self.server_thread = threading.Thread(target=self.__server.serve_forever, daemon=True)
+        self.logger = logging.getLogger('HTTPServer')
 
     def start(self):
         """ Start the server and thread """
+        self.logger.log(logging.INFO, 'Starting the server')
         self.server_thread.start()
 
     def stop(self):
         """ Shutdown the server and thread """
+        self.logger.log(logging.INFO, 'Stopping the server')
         if self.server_thread.isAlive():
-            # TODO: Check if actually works
             self.__server.shutdown()
             self.server_thread.join()
+            self.logger.log(logging.INFO, 'Stopped')
 
         else:
-            # Nothing to do, already shutdown
-            pass
+            self.logger.log(logging.WARN, 'Already stopped, nothing to do')
 
     def restart(self):
         """ Unload all the dependencies and stuff from memory, reload and start again """
-        pass
+        self.logger.log(logging.INFO, 'Restarting the server')
+        self.stop()
+        reload(self.server_thread)
+        reload(self.__server)
+        self.start()
+        self.logger.log(logging.INFO, 'Restarted')
 
 
 # noinspection PyPep8Naming
@@ -86,8 +94,9 @@ class AudioParser():
     """ Implements the audio parsing interface for tikplay.
 
     Parses song metadata, handles database updating, and pushes the audio to soundcard """
-    def __init__(self):
-        self.di = interface.DatabaseInterface()
+    def __init__(self, di=interface.DatabaseInterface):
+        self.di = di()
+        self.logger = logging.getLogger('AudioParser')
 
     def find(self, keyword, search_from='filename'):
         """ Find a song from the database based on a certain keyword

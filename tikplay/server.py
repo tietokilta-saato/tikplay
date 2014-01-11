@@ -1,5 +1,6 @@
 import datetime
 import http.server
+import threading
 import pysoundcard
 import pysoundfile
 from tikplay.statics import USAGE
@@ -8,17 +9,27 @@ from tikplay.database import interface
 
 class Server():
     """ Implements the socket interface for tikplay and listens on a certain port """
-    def __init__(self, host='', port=5000):
-        self.host = host
-        self.port = port
+    def __init__(self, host='', port=5000, server_class=http.server.HTTPServer):
+        self.__server = server_class((host, port), TikplayAPIHandler)
+        self.server_thread = threading.Thread(target=self.__server.serve_forever, daemon=True)
 
     def start(self):
-        pass
+        """ Start the server and thread """
+        self.server_thread.start()
 
     def stop(self):
-        pass
+        """ Shutdown the server and thread """
+        if self.server_thread.isAlive():
+            # TODO: Check if actually works
+            self.__server.shutdown()
+            self.server_thread.join()
+
+        else:
+            # Nothing to do, already shutdown
+            pass
 
     def restart(self):
+        """ Unload all the dependencies and stuff from memory, reload and start again """
         pass
 
 
@@ -29,27 +40,40 @@ class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
         self.ap = AudioParser()
 
     def do_GET(self):
-        if '/hash/' in self.path and self.path.startswith('/play/'):
-            pass
+        path_parts = self.path.split('/')
+        if path_parts[1] == 'now_playing':
+            self.__get_now_playing()
 
-        elif '/hash/' in self.path and self.path.startswith('/find/'):
-            pass
-
-        elif '/name/' in self.path and self.path.startswith('/play'):
-            pass
-
-        elif '/name/' in self.path and self.path.startswith('/find/'):
-            pass
-
-        elif self.path == '/now_playing':
-            pass
+        elif len(path_parts) < 4:
+            self.__get_else(path_parts)
 
         else:
             self.__error_state()
 
     def do_POST(self):
         if self.path == '/file':
-            pass
+            self.ap.post_file(self.rfile)
+
+        else:
+            self.__error_state()
+
+    def __get_now_playing(self):
+        self.send_response(200, 'Now playing: ' + self.ap.now_playing())
+
+    def __get_else(self, path_parts):
+        target = path_parts[-1]
+        correct_requests = ['song_hash', 'artist', 'title', 'length', 'filename']
+        if path_parts[1] == 'find' and path_parts[2] in correct_requests:
+            if self.ap.find(target, path_parts[2]):
+                self.send_response(302)
+            else:
+                self.send_response(404)
+
+        elif path_parts[1] == 'play' and path_parts[2] in correct_requests:
+            if self.ap.play(target, path_parts[2]):
+                self.send_response(200, 'Song is playing')
+            else:
+                self.send_response(201, 'Song is in the queue')
 
         else:
             self.__error_state()
@@ -78,11 +102,14 @@ class AudioParser():
         """
         pass
 
-    def play(self, song_hash):
+    def play(self, keyword, search_from='song_hash'):
         """ Play a song or add it to queue if a song is already playing
 
         Keyword arguments:
-            song_hash: the identifier to with which to select the file to play
+            keyword: the keyword to play
+        search_from (optional):
+            the column to search for the song_hash with the keyword, valid values:
+            song_hash (default), filename, artist, title, length
 
         Return: true if started playing, false if added to queue
 
@@ -97,7 +124,7 @@ class AudioParser():
         """ Save file to cache and add metadata to database
 
         Keyword arguments:
-            fp: the file to save, should be in the format that socket.recv() returns
+            fp: the file to save
 
         Return: true if successfully saved
         """

@@ -11,7 +11,10 @@ from tikplay.database import interface
 class Server():
     """ Implements the socket interface for tikplay and listens on a certain port """
     def __init__(self, host='', port=5000, server_class=http.server.HTTPServer):
-        self.__server = server_class((host, port), TikplayAPIHandler)
+        self.host = host
+        self.port = port
+        self.server_class = server_class
+        self.__server = self.server_class((self.host, self.port), TikplayAPIHandler)
         self.server_thread = threading.Thread(target=self.__server.serve_forever, daemon=True)
         self.logger = logging.getLogger('HTTPServer')
 
@@ -33,12 +36,7 @@ class Server():
 
     def restart(self):
         """ Unload all the dependencies and stuff from memory, reload and start again """
-        self.logger.log(logging.INFO, 'Restarting the server')
-        self.stop()
-        reload(self.server_thread)
-        reload(self.__server)
-        self.start()
-        self.logger.log(logging.INFO, 'Restarted')
+        pass
 
 
 # noinspection PyPep8Naming

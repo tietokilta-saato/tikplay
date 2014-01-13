@@ -28,9 +28,8 @@ class YouTubeRetriever(Retriever):
             if path != "/watch":
                 return False
             query = urllib.parse.parse_qs(query)
+            # parse_qs ensures that empty values are not in the returned dict, making testing for them unnecessary
             if "v" not in query:
-                return False
-            if not query["v"]:
                 return False
             return True
 
@@ -53,7 +52,8 @@ class YouTubeRetriever(Retriever):
 
         # http[s]://youtu.be/12345
         elif netloc[-2:] == ["youtu", "be"]:
-            return path
+            # path contains the leading slash
+            return path[1:]
 
         # Something completely different
         else:

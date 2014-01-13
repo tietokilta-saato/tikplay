@@ -1,3 +1,4 @@
+nose
 pysoundfile
 pysoundcard
 SQLAlchemy==0.9.1

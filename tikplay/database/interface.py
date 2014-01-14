@@ -36,11 +36,12 @@ class DatabaseInterface():
         """
         return False
 
-    def set_last_played(self, song_hash):
+    def set_last_played(self, song_hash, date=datetime.datetime.now()):
         """ Sets last played to datetime.now()
 
         Keyword arguments:
             song_hash: SHA-1 hash of the song
+            date (optional): ...
 
         Return: true if successfully set
         """

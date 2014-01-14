@@ -41,11 +41,11 @@ class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_response(404)
 
-        elif path_parts[1] == 'play' and path_parts[2] in correct_requests:
-            if self.ap.play(target, path_parts[2]):
-                self.send_response(200, 'Song is playing')
+        elif path_parts[1] == 'play' and path_parts[2] == 'song_hash':
+            if self.ap.play(target):
+                self.send_response(200)
             else:
-                self.send_response(201, 'Song is in the queue')
+                self.send_response(201)
 
         else:
             self.__error_state()

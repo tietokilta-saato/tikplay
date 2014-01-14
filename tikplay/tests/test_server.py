@@ -43,9 +43,3 @@ class HandlerTestcase(unittest.TestCase):
         pass
 
 
-class AudioTestcase(unittest.TestCase):
-    def setup(self):
-        pass
-
-    def teardown(self):
-        pass

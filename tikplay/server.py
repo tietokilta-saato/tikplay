@@ -1,4 +1,3 @@
-import datetime
 import http.server
 import logging
 import pysoundcard
@@ -16,38 +15,28 @@ class AudioParser():
         self.di = di()
         self.logger = logging.getLogger('AudioParser')
 
-    def find(self, keyword, search_from='filename'):
+    def find(self, keyword, column='filename'):
         """ Find a song from the database based on a certain keyword
         Keyword arguments:
-        keyword:
-            the keyword to search with
-        search_from (optional):
-            the column to search from with the keyword, valid values: song_hash, filename, artist, title, length
+            keyword: the keyword to search with
+            column (optional):
+                the column to search from with the keyword, valid values: song_hash, filename, artist, title, length
 
         Return: true if song exists in database
-
         """
-        pass
+        return False
 
-    def play(self, keyword, search_from='song_hash'):
+    def play(self, song_hash):
         """ Play a song or add it to queue if a song is already playing
 
         Keyword arguments:
-            keyword: the keyword to play
-        search_from (optional):
-            the column to search for the song_hash with the keyword, valid values:
-            song_hash (default), filename, artist, title, length
+            song_hash: ...
 
         Return: true if started playing, false if added to queue
-
         """
         pass
 
-    def now_playing(self):
-        """ Returns the song that is now playing in the format "Artist - Title" """
-        pass
-
-    def post_file(self, fp):
+    def store(self, fp):
         """ Save file to cache and add metadata to database
 
         Keyword arguments:
@@ -55,7 +44,18 @@ class AudioParser():
 
         Return: true if successfully saved
         """
-        pass
+        return False
+
+    def now_playing(self, queue_length=1):
+        """ Shows the now playing or the queue if queue_length is defined
+
+        Keyword arguments:
+            queue_length (optional): integer stating the length of queue to return. Default: 1.
+
+        Return: the song that is now playing in the format
+            ("Artist - Title"[, "Artist - Title", ...]) or None if empty
+        """
+        return None
 
 
 # noinspection PyPep8Naming

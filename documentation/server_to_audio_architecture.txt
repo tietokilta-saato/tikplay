@@ -1,0 +1,10 @@
++------------------+           +-------+
+| HTTP API Handler |<-Control->| Audio |
++------------------+  the      +-------+
+                      music    | API   |
+                      flow     +-------+-----------------------+
+                               | - find(keyword, column)       |
+                               | - play(song_hash)             |
+                               | - store(filepointer)          |
+                               | - now_playing(queue_length=1) |
+                               +-------------------------------+

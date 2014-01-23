@@ -19,6 +19,10 @@ Architecture
 
 ![oh yes it does](./documentation/server_to_audio_architecture.png)
 
+## Cache architecture
+
+![ditaa <3](./documentation/cache_handler.png)
+
 ## Audio architecture
 
 ![are you really reading these?](./documentation/audio_architecture.png)

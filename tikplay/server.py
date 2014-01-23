@@ -3,21 +3,23 @@ import logging
 import threading
 from tikplay.statics import USAGE
 from tikplay import audio
+from tikplay import cache
 
 
 # noinspection PyPep8Naming
 class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        self.ap = audio.API()
+        self.audio_api = audio.API()
+        self.cache_handler = cache.Handler()
         http.server.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def do_GET(self):
         path_parts = self.path.split('/')
         if path_parts[1] == 'now_playing':
-            self.send_response(200, 'Now playing: ' + self.ap.now_playing())
+            self.send_response(200, 'Now playing: ' + self.audio_api.now_playing())
 
         elif path_parts[1] == 'queue':
-            self.send_response(200, 'Queue: ' + self.ap.now_playing(10))
+            self.send_response(200, 'Queue: ' + self.audio_api.now_playing(10))
 
         elif len(path_parts) < 4:
             self.__get_else(path_parts)
@@ -27,7 +29,7 @@ class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == '/file':
-            self.ap.store(self.rfile)
+            self.cache_handler.store(self.rfile)
 
         else:
             self.__error_state()
@@ -36,13 +38,13 @@ class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
         target = path_parts[-1]
         correct_requests = ['song_hash', 'artist', 'title', 'length', 'filename']
         if path_parts[1] == 'find' and path_parts[2] in correct_requests:
-            if self.ap.find(target, path_parts[2]):
+            if self.cache_handler.find(target, path_parts[2]):
                 self.send_response(302)
             else:
                 self.send_response(404)
 
         elif path_parts[1] == 'play' and path_parts[2] == 'song_hash':
-            if self.ap.play(target):
+            if self.audio_api.play(target):
                 self.send_response(200)
             else:
                 self.send_response(201)

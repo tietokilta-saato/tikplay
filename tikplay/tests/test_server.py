@@ -41,5 +41,3 @@ class HandlerTestcase(unittest.TestCase):
 
     def teardown(self):
         pass
-
-

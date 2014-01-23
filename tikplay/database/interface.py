@@ -1,12 +1,13 @@
 import datetime
-from tikplay.database import db
-from tikplay.database.models import Song
+from tikplay.database import db as database
+from tikplay.database.models import Song as database_model
 
 
 class DatabaseInterface():
     """ Implements the database interface which abstracts database communication """
-    def __init__(self):
-        pass
+    def __init__(self, db=database, model=database_model):
+        self.db = db
+        self.model = model
 
     def add_song_metadata(self, song_hash, filename, artist=None, title=None, length=None, play_count=1,
                           date_added=datetime.datetime.now(), last_played=datetime.datetime.now()):
@@ -72,7 +73,7 @@ class DatabaseInterface():
         Keyword arguments:
             filename: ...
 
-        Return: list of SHA-1 hashes or None if not found
+        Return: dictionary of SHA-1 hashes or None if not found
         """
         return None
 
@@ -82,7 +83,7 @@ class DatabaseInterface():
         Keyword arguments:
             artist: ...
 
-        Return: list of SHA-1 hashes or None if not found
+        Return: dictionary of SHA-1 hashes or None if not found
         """
         return None
 
@@ -92,7 +93,7 @@ class DatabaseInterface():
         Keyword arguments:
             title: (partial) title of the song
 
-        Return: list of SHA-1 hashes or None if not found
+        Return: dictionary of SHA-1 hashes or None if not found
         """
         return None
 
@@ -102,6 +103,6 @@ class DatabaseInterface():
         Keyword arguments:
             length: ...
 
-        Return: list of SHA-1 hashes or None if not found
+        Return: dictionary of SHA-1 hashes or None if not found
         """
         return None

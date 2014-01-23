@@ -1,18 +1,18 @@
 import unittest
 import mock
-from tikplay import audio
+from tikplay import cache
 
 
-class AudioTestcase(unittest.TestCase):
+class CacheTestcase(unittest.TestCase):
     def setup(self):
         self.database_interface = mock.MagicMock()
-        self.audio_api_class = audio.API
+        self.cache_handler_class = cache.Handler
 
     def teardown(self):
         pass
 
-    def test_play(self):
+    def test_find(self):
         pass
 
-    def test_now_playing(self):
+    def test_store(self):
         pass

@@ -1,10 +1,17 @@
 +------------------+           +-------+
 | HTTP API Handler |<-Control->| Audio |
 +------------------+  the      +-------+
-                      music    | API   |
-                      flow     +-------+-----------------------+
+         ^            music    | API   |
+         |            flow     +-------+-----------------------+
+         |                     | - play(song_hash)             |
+         |                     | - now_playing(queue_length=1) |
+         |                     +-------------------------------+
+         |
+         |                     +---------+
+         +--Control the cache->| Cache   |
+            and find if songs  +---------+
+            exist              | Handler |
+                               +---------+---------------------+
                                | - find(keyword, column)       |
-                               | - play(song_hash)             |
                                | - store(filepointer)          |
-                               | - now_playing(queue_length=1) |
                                +-------------------------------+

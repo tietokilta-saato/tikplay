@@ -24,7 +24,20 @@ class API():
 
         Return: true if started playing, false if added to queue
         """
-        pass
+        soundcard = True
+        for dev in list(pysoundcard.devices()):
+            if '(hw:0,0)' in dev['name']:
+                soundcard = dev
+                break
+
+        stream = pysoundcard.Stream(output_device=soundcard)
+        soundfile = pysoundfile.SoundFile(song_hash)
+        channels = soundfile.channels
+        sample_rate = soundfile.sample_rate
+        stream.output_channels = channels
+        stream.start()
+        stream.write(soundfile[:])
+        stream.end()
 
     def now_playing(self, queue_length=1):
         """ Shows the now playing or the queue if queue_length is defined

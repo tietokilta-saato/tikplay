@@ -24,9 +24,6 @@ class API():
 
         Return: true if started playing, false if added to queue
         """
-        # if cache: load audio metadata from cache
-        # else: check that song_hash is actually a filename for an existing file
-
         audio_file = media.load(song_hash)
         self.player.queue(audio_file)
         if not self.player.playing:

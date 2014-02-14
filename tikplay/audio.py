@@ -1,7 +1,6 @@
 import json
 import logging
-import pysoundcard
-import pysoundfile
+from pyglet import media
 from tikplay.database import interface
 
 
@@ -13,6 +12,7 @@ class API():
     Also implements basic song metadata fetching from the database
     """
     def __init__(self, di=interface.DatabaseInterface):
+        self.player = media.Player()
         self.di = di()
         self.logger = logging.getLogger('AudioAPI')
 
@@ -24,20 +24,26 @@ class API():
 
         Return: true if started playing, false if added to queue
         """
-        soundcard = True
-        for dev in list(pysoundcard.devices()):
-            if '(hw:0,0)' in dev['name']:
-                soundcard = dev
-                break
+        # if cache: load audio metadata from cache
+        # else: check that song_hash is actually a filename for an existing file
 
-        stream = pysoundcard.Stream(output_device=soundcard)
-        soundfile = pysoundfile.SoundFile(song_hash)
-        channels = soundfile.channels
-        sample_rate = soundfile.sample_rate
-        stream.output_channels = channels
-        stream.start()
-        stream.write(soundfile[:])
-        stream.end()
+        audio_file = media.load(song_hash)
+        self.player.queue(audio_file)
+        if not self.player.playing:
+            self.player.play()
+
+    def next(self):
+        self.player.next_source()
+
+    def pause(self):
+        self.player.pause()
+
+    def resume(self):
+        self.player.resume()
+
+    def kill(self):
+        while self.player.playing:
+            self.player.next_source()
 
     def now_playing(self, queue_length=1):
         """ Shows the now playing or the queue if queue_length is defined
@@ -46,6 +52,8 @@ class API():
             queue_length (optional): integer stating the length of queue to return. Default: 1.
 
         Return: the song that is now playing in the format
-            ("Artist - Title"[, "Artist - Title", ...]) or None if empty
+            [(Artist, Title), (Artist, Title), ...) or None if empty
         """
-        return None
+        src = self.player.source
+
+        return [(src.info.author, src.info.title)]

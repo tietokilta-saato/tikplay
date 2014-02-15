@@ -1,6 +1,5 @@
 import logging
-from pyglet import media
-from tikplay.database import interface
+import pyglet
 
 
 class API():
@@ -10,9 +9,9 @@ class API():
 
     Also implements basic song metadata fetching from the database
     """
-    def __init__(self, di=interface.DatabaseInterface):
-        self.player = media.Player()
-        self.di = di()
+    def __init__(self, media_player=pyglet.media.Player, media=pyglet.media):
+        self.player = media_player()
+        self.media = media
         self.logger = logging.getLogger('AudioAPI')
 
     def play(self, song_hash):
@@ -23,12 +22,12 @@ class API():
 
         Return: true if started playing, false if added to queue
         """
-        audio_file = media.load(song_hash)
+        audio_file = self.media.load(song_hash)
         self.player.queue(audio_file)
         if not self.player.playing:
             self.player.play()
 
-        return player.source == audio_file
+        return self.player.source == audio_file
 
     def next(self):
         self.player.next_source()

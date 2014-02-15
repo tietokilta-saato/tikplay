@@ -1,4 +1,3 @@
-import json
 import logging
 from pyglet import media
 from tikplay.database import interface
@@ -28,6 +27,8 @@ class API():
         self.player.queue(audio_file)
         if not self.player.playing:
             self.player.play()
+
+        return player.source == audio_file
 
     def next(self):
         self.player.next_source()

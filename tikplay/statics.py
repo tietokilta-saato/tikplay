@@ -9,3 +9,12 @@ Usage is the following:
     GET /play/<"song_hash"|"filename">/<song_hash|filename>
     POST /file
 """
+
+
+INTERNAL_ERROR = """Internal error occured! Please contact an administrator, or
+                    if you are one, please consult the server logs for more information.
+
+                    If this isn't the first time this error occurs, please
+                    consider submitting an issue ticket to:
+                    https://github.com/tietokilta-saato/tikplay/issues
+                 """

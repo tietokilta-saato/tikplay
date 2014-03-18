@@ -1,7 +1,7 @@
 import http.server
 import logging
 import threading
-from tikplay.statics import USAGE
+from tikplay.statics import USAGE, INTERNAL_ERROR
 from tikplay import audio
 from tikplay import cache
 
@@ -21,7 +21,7 @@ class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
         elif path_parts[1] == 'queue':
             self.send_response(200, 'Queue: ' + self.audio_api.now_playing(10))
 
-        elif len(path_parts) < 4:
+        elif len(path_parts) == 4:
             self.__get_else(path_parts)
 
         else:
@@ -29,7 +29,12 @@ class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == '/file':
-            self.cache_handler.store(self.rfile)
+            filepath = self.cache_handler.store(fp=self.rfile, filename=self.headers.get('TP-Filename'))
+            if filepath:
+                self.send_response(200, filepath)
+
+            else:
+                self.send_response(500, INTERNAL_ERROR)
 
         else:
             self.__error_state()
@@ -64,18 +69,21 @@ class Server():
         self.server_class = server_class
         self.handler_class = handler_class
         self.__server = self.server_class((self.host, self.port), self.handler_class)
-        self.server_thread = threading.Thread(target=self.__server.serve_forever, daemon=True)
+        self.server_thread = threading.Thread(target=self.__server.serve_forever)
         self.logger = logging.getLogger('HTTPServer')
 
     def start(self):
         """ Start the server and thread """
         self.logger.log(logging.INFO, 'Starting the server')
-        self.server_thread.start()
+        try:
+            self.server_thread.start()
+        except RuntimeError:
+            print("Server already running! If you want to restart it, call restart()")
 
     def stop(self):
         """ Shutdown the server and thread """
         self.logger.log(logging.INFO, 'Stopping the server')
-        if self.server_thread.isAlive():
+        if self.server_thread.is_alive():
             self.__server.shutdown()
             self.server_thread.join()
             self.logger.log(logging.INFO, 'Stopped')
@@ -85,5 +93,7 @@ class Server():
 
     def restart(self):
         """ Unload all the dependencies and stuff from memory, reload and start again """
-        # TODO
-        pass
+        self.logger.info('Restarting the server')
+        self.stop()
+        self.server_thread = threading.Thread(target=self.__server.serve_forever, daemon=True)
+        self.start()

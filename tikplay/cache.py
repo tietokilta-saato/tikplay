@@ -1,5 +1,7 @@
+import json
 import logging
-import pysoundfile
+import os
+import random
 from tikplay.database import interface
 
 
@@ -47,12 +49,36 @@ class Handler():
         else:
             return None
 
-    def store(self, fp):
+    def store(self, fp, filename=None):
         """ Save file to cache and add metadata to database
 
         Keyword arguments:
             fp: the file to save
 
-        Return: true if successfully saved
+        Return: filepath to the saved file if successful, False otherwise
         """
-        return False
+        ## TODO: make cache folder configurable
+        self.logger.debug('Trying to store a new file')
+        cache_dir = os.path.expanduser('~/.tikplay_cache')
+        filepath = ""
+        if not os.path.exists(cache_dir):
+            try:
+                os.mkdir(cache_dir)
+            except IOError:
+                self.logger.warn('Could not create cache directory')
+                return False
+
+        if filename:
+            filepath = os.path.join(cache_dir, filename)
+            with open(filepath, 'wb') as _file:
+                _file.write(fp.read())
+
+        else:
+            random_id = int(random.random() * 100000.0)  # 100 000 should be enough buffer for unique songs
+            filepath = os.path.join(cache_dir, random_id)
+            with open(filepath, 'wb') as _file:
+                _file.write(fp.read())
+
+        self.logger.info('Wrote a new file to: %s', filepath)
+        ## TODO: update file info to the database
+        return filepath

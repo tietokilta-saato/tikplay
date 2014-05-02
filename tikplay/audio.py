@@ -1,5 +1,6 @@
 import logging
 import pyglet
+import os
 
 
 class API():
@@ -13,6 +14,7 @@ class API():
         self.player = media_player()
         self.media = media
         self.logger = logging.getLogger('AudioAPI')
+        self.media_dir = os.path.abspath(os.path.join(os.path.expanduser('~'), '.tikplay_music'))
 
     def play(self, song_hash):
         """ Play a song or add it to queue if a song is already playing
@@ -22,14 +24,14 @@ class API():
 
         Return: true if started playing, false if added to queue
         """
-        audio_file = self.media.load(song_hash)
+        audio_file = self.media.load(os.path.abspath(os.path.join(self.media_dir, song_hash)))
         self.player.queue(audio_file)
         if not self.player.playing:
             self.player.play()
 
         return self.player.source == audio_file
 
-    def next(self):
+    def next_(self):
         self.player.next_source()
 
     def pause(self):

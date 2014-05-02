@@ -53,4 +53,7 @@ class API():
         """
         src = self.player.source
 
-        return [(src.info.author, src.info.title)]
+        if src:
+            return [(src.info.author, src.info.title)]
+        else:
+            return None

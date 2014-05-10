@@ -1,8 +1,7 @@
-nose
+Flask==0.10.1
 SQLAlchemy==0.9.1
-requests==2.1.0
-virtualenv==1.11
-youtube-dl==2014.01.08
-nose==1.3.0
 mock==1.0.1
-pyglet==1.2
+nose==1.3.0
+pyglet==1.2alpha1
+requests==2.1.0
+youtube-dl==2014.01.08

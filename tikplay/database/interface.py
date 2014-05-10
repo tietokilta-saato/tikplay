@@ -1,6 +1,6 @@
 import datetime
-from tikplay.database import db as database
-from tikplay.database.models import Song as database_model
+from database import db as database
+from database.models import Song as database_model
 
 
 class DatabaseInterface():

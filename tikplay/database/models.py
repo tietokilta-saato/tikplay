@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from tikplay.database import Base
+from database import Base
 
 
 class Song(Base):

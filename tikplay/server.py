@@ -1,9 +1,9 @@
 import http.server
 import logging
 import threading
-from tikplay.statics import USAGE, INTERNAL_ERROR
-from tikplay import audio
-from tikplay import cache
+from statics import USAGE, INTERNAL_ERROR
+import audio
+import cache
 
 
 # noinspection PyPep8Naming

@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import random
-from tikplay.database import interface
+from database import interface
 
 
 class Handler():

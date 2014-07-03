@@ -1,12 +1,10 @@
 import unittest
 import mock
-from tikplay import cache
 
 
 class CacheTestcase(unittest.TestCase):
     def setup(self):
-        self.database_interface = mock.MagicMock()
-        self.cache_handler_class = cache.Handler
+        pass
 
     def teardown(self):
         pass

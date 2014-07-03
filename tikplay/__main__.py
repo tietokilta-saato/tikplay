@@ -1,8 +1,7 @@
-import audio
-import cache
 import argparse
-from statics import USAGE, INTERNAL_ERROR
-from server import TikplayFlask, File, Song, Queue, Find, url_base
+import server
+from flask import Flask
+from flask.ext import restful
 
 __author__ = 'Jami Lindh'
 
@@ -12,8 +11,10 @@ _argparser.add_argument('-df', '--debug-flask', help='Enable flask debug mode', 
 _argparser.add_argument('-tf', '--testing-flask', help='Enable flask testing mode', default=False, action='store_true')
 _argparser.add_argument('-D', '--daemon', help="Fork in to the background", default=False, action='store_true')
 _argparser.add_argument('-p', '--port', help='Port that we should listen (Default: 5000)', type=int, default=5000)
-_argparser.add_argument('-s', '--song-dir', help='Directory to which store technical copies of the songs (Default: ~/.tikplay_music)',
-                        type=str, default='~/.tikplay_music')
+_argparser.add_argument('-s', '--song-dir',
+                        help='Directory to which store technical copies of the songs (Default: ~/.tikplay_music)',
+                        type=str,
+                        default='~/.tikplay_music')
 args = _argparser.parse_args()
 
 if args.daemon:
@@ -45,13 +46,16 @@ if args.daemon:
         sys.exit(1)
 
 
-_tikserver = TikplayFlask('tikplay')
+url_base = server.url_base
+
+_tikserver = Flask('tikplay')
 _tikserver.song_dir = args.song_dir
 _tikserver.debug = args.debug_flask
 _tikserver.testing = args.testing_flask
-# TODO: Doesn't work like this for some reason
-#_tikserver.view_functions = {'{}/file'.format(url_base), File.as_view('file'),
-#                             '{}/song'.format(url_base), Song.as_view('song'),
-#                             '{}/queue'.format(url_base), Queue.as_view('queue'),
-#                             '{}/find'.format(url_base), Find.as_view('find')}
+_tikserver_api = restful.Api(_tikserver)
+_tikserver_api.add_resource(server.File, '{}/file'.format(url_base))
+_tikserver_api.add_resource(server.NowPlaying, '{}/song'.format(url_base))
+_tikserver_api.add_resource(server.PlaySong, '{}/song/<string:song_sha1>'.format(url_base))
+_tikserver_api.add_resource(server.Queue, '{}/queue'.format(url_base))
+_tikserver_api.add_resource(server.Find, '{}/find/<int:find_type>/<string:find_key>'.format(url_base))
 _tikserver.run(port=args.port)

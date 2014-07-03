@@ -13,7 +13,7 @@ ALLOWED_EXTENSIONS = set(['mp3', 'ogg', 'wav'])
 
 
 class File(Resource):
-    def allowed_file(self, file):
+    def __allowed_file(self, file):
         return file.filename.split('.')[-1] in ALLOWED_EXTENSIONS
 
     def post(self):
@@ -22,12 +22,12 @@ class File(Resource):
         """
         cache_handler = current_app.config['cache_handler']
         file = request.files['file']
-        if file and allowed_file(file):
+        if file and self.__allowed_file(file):
             filename = secure_filename(file.filename)
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
             return jsonify(filename=filename, saved=True, text="File successfully saved!")
 
-        elif not allowed_file(file):
+        elif not self.__allowed_file(file):
             return jsonify(filename=filename, saved=False, text="Extension not one of: {!r}".format(ALLOWED_EXTENSIONS))
 
         else:

@@ -1,11 +1,9 @@
 import datetime
-from database import db as database
-from database.models import Song as database_model
 
 
 class DatabaseInterface():
     """ Implements the database interface which abstracts database communication """
-    def __init__(self, db=database, model=database_model):
+    def __init__(self, db, model):
         self.db = db
         self.model = model
 

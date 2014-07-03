@@ -1,11 +1,19 @@
 import argparse
+import os
 import server
 from flask import Flask
 from flask.ext import restful
+import pyglet
+import configuration
+import database
+from database import models
+from database import interface
+import audio
+import cache
 
 __author__ = 'Jami Lindh'
 
-
+# Parse args
 _argparser = argparse.ArgumentParser()
 _argparser.add_argument('-df', '--debug-flask', help='Enable flask debug mode', default=False, action='store_true')
 _argparser.add_argument('-tf', '--testing-flask', help='Enable flask testing mode', default=False, action='store_true')
@@ -17,9 +25,13 @@ _argparser.add_argument('-s', '--song-dir',
                         default='~/.tikplay_music')
 args = _argparser.parse_args()
 
+# Daemonize
+workdir = os.path.abspath(os.path.expanduser(args.song_dir))
+if not os.path.exists(workdir):
+    os.mkdir(workdir)
+
 if args.daemon:
     import sys
-    import os
     try:
         pid = os.fork()
         if pid > 0:
@@ -27,10 +39,6 @@ if args.daemon:
     except OSError as e:
         print('Fork failed: {0} ({1})'.format(e.errno, e.strerror))
         sys.exit(1)
-
-    workdir = os.path.expanduser(args.song_dir)
-    if not os.path.exists(workdir):
-        os.mkdir(workdir)
 
     os.chdir(workdir)
     os.setsid()
@@ -45,13 +53,23 @@ if args.daemon:
         print('Fork failed: {0} ({1})'.format(e.errno, e.strerror))
         sys.exit(1)
 
+# Init classes
+_db = database.db
+_db_model = models.Song()
+_database_interface = interface.DatabaseInterface(db=_db, model=_db_model)
+_cache_handler = cache.Handler(di_cls=_database_interface)
+_audio_api = audio.API(media_cls=pyglet.media, media_dir=workdir)
 
+# Init flask
 url_base = server.url_base
 
 _tikserver = Flask('tikplay')
-_tikserver.song_dir = args.song_dir
 _tikserver.debug = args.debug_flask
 _tikserver.testing = args.testing_flask
+_tikserver.config['cache_handler'] = _cache_handler
+_tikserver.config['audio_api'] = _audio_api
+_tikserver.config['UPLOAD_FOLDER'] = workdir
+
 _tikserver_api = restful.Api(_tikserver)
 _tikserver_api.add_resource(server.File, '{}/file'.format(url_base))
 _tikserver_api.add_resource(server.NowPlaying, '{}/song'.format(url_base))

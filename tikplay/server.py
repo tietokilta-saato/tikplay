@@ -1,140 +1,75 @@
-import datetime
-import http.server
-import logging
-import pysoundcard
-import pysoundfile
-import threading
-from tikplay.statics import USAGE
-from tikplay.database import interface
+from flask import request, jsonify, current_app
+from flask.ext.restful import Resource
+from werkzeug.utils import secure_filename
+from statics import USAGE, INTERNAL_ERROR
+import configuration
+import os
+from hashlib import sha1
 
 
-class AudioParser():
-    """ Implements the audio parsing interface for tikplay.
+__version__ = 'v1.0'
+url_base = '/srv/{}'.format(__version__)
+ALLOWED_EXTENSIONS = set(['mp3', 'ogg', 'wav'])
 
-    Parses song metadata, handles database updating, and pushes the audio to soundcard """
-    def __init__(self, di=interface.DatabaseInterface):
-        self.di = di()
-        self.logger = logging.getLogger('AudioParser')
 
-    def find(self, keyword, search_from='filename'):
-        """ Find a song from the database based on a certain keyword
-        Keyword arguments:
-        keyword:
-            the keyword to search with
-        search_from (optional):
-            the column to search from with the keyword, valid values: song_hash, filename, artist, title, length
+class File(Resource):
+    def __allowed_file(self, file):
+        return file.filename.split('.')[-1] in ALLOWED_EXTENSIONS
 
-        Return: true if song exists in database
-
+    def post(self):
         """
+        POST a new song to save
+        """
+        cache_handler = current_app.config['cache_handler']
+        file = request.files['file']
+        if file and self.__allowed_file(file):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            return jsonify(filename=filename, saved=True, text="File successfully saved!")
+
+        elif not self.__allowed_file(file):
+            return jsonify(filename=filename, saved=False, text="Extension not one of: {!r}".format(ALLOWED_EXTENSIONS))
+
+        else:
+            return jsonify(filename="", saved=False,
+                           text="You have to send a file, e.g. curl -X POST -F file=@<file> <server_address>")
+
+
+class NowPlaying(Resource):
+    def get(self):
+        """
+        GET now playing song
+        """
+        audio_api = current_app.config['audio_api']
+        return "hello world"
+
+
+class PlaySong(Resource):
+    def post(self, song_sha1):
+        """
+        POST a new song to play
+        """
+        audio_api = current_app.config['audio_api']
+        return song_sha1
+
+
+class Queue(Resource):
+    def get(self):
+        """
+        GET the now_playing queue
+        """
+        audio_api = current_app.config['audio_api']
         pass
 
-    def play(self, keyword, search_from='song_hash'):
-        """ Play a song or add it to queue if a song is already playing
+
+class Find(Resource):
+    def get(self, find_type, find_key):
+        """
+        GET find a song from the database.
 
         Keyword arguments:
-            keyword: the keyword to play
-        search_from (optional):
-            the column to search for the song_hash with the keyword, valid values:
-            song_hash (default), filename, artist, title, length
-
-        Return: true if started playing, false if added to queue
-
+            find_type: valid values 1 (song_hash), 2 (artist), 3 (title), 4 (length), 5 (filename)
+            find_key: ...
         """
-        pass
-
-    def now_playing(self):
-        """ Returns the song that is now playing in the format "Artist - Title" """
-        pass
-
-    def post_file(self, fp):
-        """ Save file to cache and add metadata to database
-
-        Keyword arguments:
-            fp: the file to save
-
-        Return: true if successfully saved
-        """
-        pass
-
-
-# noinspection PyPep8Naming
-class TikplayAPIHandler(http.server.BaseHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        self.ap = AudioParser()
-        http.server.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
-
-    def do_GET(self):
-        path_parts = self.path.split('/')
-        if path_parts[1] == 'now_playing':
-            self.__get_now_playing()
-
-        elif len(path_parts) < 4:
-            self.__get_else(path_parts)
-
-        else:
-            self.__error_state()
-
-    def do_POST(self):
-        if self.path == '/file':
-            self.ap.post_file(self.rfile)
-
-        else:
-            self.__error_state()
-
-    def __get_now_playing(self):
-        self.send_response(200, 'Now playing: ' + self.ap.now_playing())
-
-    def __get_else(self, path_parts):
-        target = path_parts[-1]
-        correct_requests = ['song_hash', 'artist', 'title', 'length', 'filename']
-        if path_parts[1] == 'find' and path_parts[2] in correct_requests:
-            if self.ap.find(target, path_parts[2]):
-                self.send_response(302)
-            else:
-                self.send_response(404)
-
-        elif path_parts[1] == 'play' and path_parts[2] in correct_requests:
-            if self.ap.play(target, path_parts[2]):
-                self.send_response(200, 'Song is playing')
-            else:
-                self.send_response(201, 'Song is in the queue')
-
-        else:
-            self.__error_state()
-
-    def __error_state(self):
-        self.send_response(200, USAGE)
-
-
-class Server():
-    """ Wrapper for HTTPServer and TikplayAPIHandler """
-    def __init__(self, host='', port=5000, server_class=http.server.HTTPServer, handler_class=TikplayAPIHandler):
-        self.host = host
-        self.port = port
-        self.server_class = server_class
-        self.handler_class = handler_class
-        self.__server = self.server_class((self.host, self.port), self.handler_class)
-        self.server_thread = threading.Thread(target=self.__server.serve_forever, daemon=True)
-        self.logger = logging.getLogger('HTTPServer')
-
-    def start(self):
-        """ Start the server and thread """
-        self.logger.log(logging.INFO, 'Starting the server')
-        self.server_thread.start()
-
-    def stop(self):
-        """ Shutdown the server and thread """
-        self.logger.log(logging.INFO, 'Stopping the server')
-        if self.server_thread.isAlive():
-            self.__server.shutdown()
-            self.server_thread.join()
-            self.logger.log(logging.INFO, 'Stopped')
-
-        else:
-            self.logger.log(logging.WARN, 'Already stopped, nothing to do')
-
-    def restart(self):
-        """ Unload all the dependencies and stuff from memory, reload and start again """
-        # TODO
-        pass
+        cache_handler = current_app.config['cache_handler']
+        return "{} {}".format(find_type, find_key)

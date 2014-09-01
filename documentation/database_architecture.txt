@@ -1,0 +1,13 @@
++--------------------+  +------------+  +===========+
+| Database Interface |--| SQLAlchemy |--|{s} SQLite |
++--------------------+  +------------+  +===========+---------------------------------+
+                                        | - Song (table name: songs)               {d}|
+                                        |     - song_hash      <String(40)>           |
+                                        |     - filename       <Text>                 |
+                                        |     - play_count     <Integer>              |
+                                        |     - artist         <Text>     <nullable>  |
+                                        |     - title          <Text>     <nullable>  |
+                                        |     - length         <Integer>  <nullable>  |
+                                        |     - last_played    <DateTime> <nullable>  |
+                                        |     - date_added     <DateTime> <nullable>  |
+                                        +---------------------------------------------+

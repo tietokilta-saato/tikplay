@@ -1,0 +1,15 @@
+# Python cache files
+__pycache__
+*.pyc
+
+# OS X Finder
+.DS_Store
+
+# PyCharm project files
+.idea
+
+# Virtualenv
+.tikplay-env
+
+# Ropeproject
+.ropeproject

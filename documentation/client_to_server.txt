@@ -1,0 +1,19 @@
++--------+                    +----------------------+
+| Client |<-HTTP RESTful API->|{io}      Server      |
++--------+                    +----------------------+
+                              | HTTP API Handler     |
+                              +----------------------+
+                              | - GET                |
+                              |   - /now_playing     |
+                              |   - /queue           |
+                              |   - /find            |
+                              |       - /song_hash   |
+                              |       - /filename    |
+                              |       - /artist      |
+                              |       - /title       |
+                              |       - /length      |
+                              |   - /play            |
+                              |       - /song_hash   |
+                              | -  POST              |
+                              |   - /file            |
+                              +----------------------+

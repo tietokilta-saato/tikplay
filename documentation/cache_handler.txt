@@ -1,0 +1,23 @@
+                          +-------------+  +================+
+       +----Songcache---->| PySoundFile |--|{s} HDD Storage |
+       |                  +-------------+  +================+
+       |
++------+--------+                    +--------------------+
+| Cache Handler |<-Change and store->| Database Interface |
++---------------+  song metadata     +--------------------+------------------------------+
+                                     | - add_song_metadata(song_hash,                    |
+                                     |                     filename,                     |
+                                     |                     artist=None,                  |
+                                     |                     title=None,                   |
+                                     |                     length=None,                  |
+                                     |                     play_count=1,                 |
+                                     |                     date_added=datetime.now(),    |
+                                     |                     last_played=datetime.now())   |
+                                     | - increment_play_count(song_hash)                 |
+                                     | - set_last_played(song_hash, date=datetime.now()) |
+                                     | - get_song_metadata(song_hash)                    |
+                                     | - get_song_hashes_by_filename(filename)           |
+                                     | - get_song_hashes_by_artist(artist)               |
+                                     | - get_song_hashes_by_title(title)                 |
+                                     | - get_song_hashes_by_length(length)               |
+                                     +---------------------------------------------------+

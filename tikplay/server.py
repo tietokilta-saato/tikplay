@@ -52,15 +52,6 @@ class NowPlaying(Resource):
         return "hello world"
 
 
-class PlaySong(Resource):
-    def post(self, song_sha1):
-        """
-        POST a new song to play
-        """
-        audio_api = current_app.config['audio_api']
-        return song_sha1
-
-
 class Queue(Resource):
     def get(self):
         """
@@ -70,6 +61,25 @@ class Queue(Resource):
         pass
 
 
+class PlaySong(Resource):
+    def post(self, song_sha1):
+        """
+        POST a new song to play. Do
+
+        Keyword arguments:
+            song_sha1: identifying SHA1 hashsum calculated from the file
+        """
+        audio_api = current_app.config['audio_api']
+        cache_handler = current_app.config['audio_api']
+        try:
+            result = audio_api.play(song_sha1)
+            cache_handler.play(song_sha1)
+            return jsonify(sha1=song_sha1, playing=result, error=False)
+        except AVbinException:
+            return jsonify(sha1=song_sha1, playing=False, error=True,
+                           text='Song not found. Try finding the song first!')
+
+
 class Find(Resource):
     def get(self, find_type, find_key):
         """
@@ -77,7 +87,14 @@ class Find(Resource):
 
         Keyword arguments:
             find_type: valid values 1 (song_hash), 2 (artist), 3 (title), 4 (length), 5 (filename)
-            find_key: ...
+            find_key: value corresponding to the type: 1 (SHA1), 2 (String),
+                      3 (String), 4 (Integer (seconds)), 5 (filename)
         """
+        methods = ['song_hash', 'artist', 'title', 'length', 'filename']
         cache_handler = current_app.config['cache_handler']
-        return "{} {}".format(find_type, find_key)
+        # find_type is ints from 1 - 5, list indices are ints from 0 - 4
+        found = cache_handler.find(methods[find_type - 1], find_key)
+        if found is not None:
+            return jsonify(find_type=methods[find_type - 1], find_key=find_key, found=True, text=str(found))
+        else:
+            return jsonify(find_type=methods[find_type - 1], find_key=find_key, found=False)

@@ -71,7 +71,7 @@ class DatabaseInterface():
         Keyword arguments:
             filename: ...
 
-        Return: dictionary of SHA-1 hashes or None if not found
+        Return: List of SHA-1 hashes or None if not found
         """
         return None
 
@@ -81,7 +81,7 @@ class DatabaseInterface():
         Keyword arguments:
             artist: ...
 
-        Return: dictionary of SHA-1 hashes or None if not found
+        Return: List of SHA-1 hashes or None if not found
         """
         return None
 
@@ -91,7 +91,7 @@ class DatabaseInterface():
         Keyword arguments:
             title: (partial) title of the song
 
-        Return: dictionary of SHA-1 hashes or None if not found
+        Return: List of SHA-1 hashes or None if not found
         """
         return None
 
@@ -101,6 +101,6 @@ class DatabaseInterface():
         Keyword arguments:
             length: ...
 
-        Return: dictionary of SHA-1 hashes or None if not found
+        Return: List of SHA-1 hashes or None if not found
         """
         return None

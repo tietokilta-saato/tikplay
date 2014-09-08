@@ -1,8 +1,7 @@
 from flask import request, jsonify, current_app
 from flask.ext.restful import Resource
 from werkzeug.utils import secure_filename
-from statics import USAGE, INTERNAL_ERROR
-import configuration
+from pyglet.media.avbin import AVbinException
 import os
 from hashlib import sha1
 
@@ -21,14 +20,23 @@ class File(Resource):
         POST a new song to save
         """
         cache_handler = current_app.config['cache_handler']
+        audio_api = current_app.config['audio_api']
         file = request.files['file']
         if file and self.__allowed_file(file):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            return jsonify(filename=filename, saved=True, text="File successfully saved!")
+            calced_hash = sha1(file)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], calced_hash))
+            try:
+                song_meta = audio_api.get_metadata(calced_hash)
+            except AVbinException:
+                return jsonify(filename=filename, saved=None, text='Something weird happened, try again')
+
+            cache_handler.store(calced_hash, filename, **song_meta)
+            return jsonify(filename=filename, saved=True,
+                           text="File successfully saved as {}! Use this key to play this file".format(calced_hash))
 
         elif not self.__allowed_file(file):
-            return jsonify(filename=filename, saved=False, text="Extension not one of: {!r}".format(ALLOWED_EXTENSIONS))
+            return jsonify(filename=filename, saved=False, text="Filetype not allowed!")
 
         else:
             return jsonify(filename="", saved=False,

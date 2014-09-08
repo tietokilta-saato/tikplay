@@ -50,3 +50,5 @@ class TestYouTubeRetriever(object):
         """Tests that downloading a video actually works and that the download path is predictable."""
         fn = self.retriever.get("http://www.youtube.com/watch?v=oHg5SJYRHA0")
         assert fn == os.path.join(self.tmpdir.name, "oHg5SJYRHA0.mp3")
+
+TestYouTubeRetriever.test_download.slow = 1

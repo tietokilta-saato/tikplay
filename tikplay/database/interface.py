@@ -23,7 +23,11 @@ class DatabaseInterface():
 
         Return: true if successfully added
         """
-        return False
+        new_song = self.model(song_hash=song_hash, filename=filename, artist=artist,
+                              title=title, length=length, last_played=last_played, date_added=date_added)
+        self.db.add(new_song)
+        self.db.commit()
+        return True
 
     def increment_play_count(self, song_hash):
         """ Increments play count with one

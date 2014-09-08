@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from database import Base
+from . import Base
 
 
 class Song(Base):
@@ -22,3 +22,13 @@ class Song(Base):
         return "<Song(song_hash={!s}, filename={!s}, play_count={!s}, artist={!s}, title={!s}, length={!s}, last_played={!s}, date_added={!s})>".format(
                self.song_hash, self.filename, self.play_count, self.artist,
                self.title, self.length, self.last_played, self.date_added)
+
+    def as_dict(self):
+        return {'song_hash': self.song_hash,
+                'filename': self.filename,
+                'play_count': self.play_count,
+                'artist': self.artist,
+                'title': self.title,
+                'length': self.length,
+                'last_played': self.last_played,
+                'date_added': self.date_added}

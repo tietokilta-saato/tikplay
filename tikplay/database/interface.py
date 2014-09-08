@@ -7,8 +7,8 @@ class DatabaseInterface():
         self.db = db
         self.model = model
 
-    def add_song_metadata(self, song_hash, filename, artist=None, title=None, length=None, play_count=1,
-                          date_added=datetime.datetime.now(), last_played=datetime.datetime.now()):
+    def add_song_metadata(self, song_hash, filename, artist=None, title=None, length=None, play_count=0,
+                          date_added=datetime.datetime.now(), last_played=None):
         """ Stores a new song to database
 
         Keyword arguments:
@@ -17,14 +17,14 @@ class DatabaseInterface():
             artist (optional): ...
             title (optional): ...
             length (optional): song length in seconds
-            play_count (optional): integer. Default: 1
+            play_count (optional): integer. Default: 0
             date_added (optional): datetime.datetime. Default: datetime.datetime.now()
-            last_played (optional): datetime.datetime. Default: datetime.datetime.now()
+            last_played (optional): datetime.datetime. Default: None
 
         Return: true if successfully added
         """
-        new_song = self.model(song_hash=song_hash, filename=filename, artist=artist,
-                              title=title, length=length, last_played=last_played, date_added=date_added)
+        new_song = self.model(song_hash=song_hash, filename=filename, artist=artist, title=title, length=length,
+                              play_count=play_count, last_played=last_played, date_added=date_added)
         self.db.add(new_song)
         self.db.commit()
         return True
@@ -37,18 +37,28 @@ class DatabaseInterface():
 
         Return: true if successfully incremented
         """
-        return False
+        query = self.db.query(self.model).filter(self.model.song_hash == song_hash)
+        _song = query.one()
+        _song.play_count += 1
+        self.db.add(_song)
+        self.db.commit()
+        return True
 
     def set_last_played(self, song_hash, date=datetime.datetime.now()):
-        """ Sets last played to datetime.now()
+        """ Sets last played to date
 
         Keyword arguments:
             song_hash: SHA-1 hash of the song
-            date (optional): ...
+            date (optional): defaults to datetime.datetime.now()
 
         Return: true if successfully set
         """
-        return False
+        query = self.db.query(self.model).filter(self.model.song_hash == song_hash)
+        _song = query.one()
+        _song.last_played = date
+        self.db.add(_song)
+        self.db.flush()
+        return True
 
     def get_song_metadata(self, song_hash):
         """ Get the song metadata corresponding to the (unique) SHA-1
@@ -57,7 +67,8 @@ class DatabaseInterface():
             song_hash: ...
 
         Return: dictionary in the format:
-            {'filename': <string>,
+            {'song_hash': <string:40>,
+             'filename': <string>,
              'artist': <string>,
              'title': <string>,
              'length': <string>,
@@ -67,7 +78,8 @@ class DatabaseInterface():
 
              or None if not found
         """
-        return None
+        query = self.db.query(self.model).filter(self.model.song_hash == song_hash)
+        return query.one().as_dict()
 
     def get_song_hashes_by_filename(self, filename):
         """ Get the SHA-1 hashes corresponding to the filename
@@ -75,9 +87,14 @@ class DatabaseInterface():
         Keyword arguments:
             filename: ...
 
-        Return: List of SHA-1 hashes or None if not found
+        Return: List of song metadata dictionaries or None if not found
         """
-        return None
+        filename = filename.replace('*', '%')
+        query = self.db.query(self.model).filter(self.model.filename.like(filename)).order_by(self.model.last_played)
+        if query.count() == 0:
+            return None
+
+        return [_.as_dict() for _ in query]
 
     def get_song_hashes_by_artist(self, artist):
         """ Get the SHA-1 hashes corresponding to the artist
@@ -85,9 +102,14 @@ class DatabaseInterface():
         Keyword arguments:
             artist: ...
 
-        Return: List of SHA-1 hashes or None if not found
+        Return: List of song metadata dictionaries or None if not found
         """
-        return None
+        artist = artist.replace('*', '%')
+        query = self.db.query(self.model).filter(self.model.artist.like(artist)).order_by(self.model.last_played)
+        if query.count() == 0:
+            return None
+
+        return [_.as_dict() for _ in query]
 
     def get_song_hashes_by_title(self, title):
         """ Finds the SHA-1 hashes from database corresponding to the title
@@ -95,9 +117,14 @@ class DatabaseInterface():
         Keyword arguments:
             title: (partial) title of the song
 
-        Return: List of SHA-1 hashes or None if not found
+        Return: List of song metadata dictionaries or None if not found
         """
-        return None
+        title = title.replace('*', '%')
+        query = self.db.query(self.model).filter(self.model.title.like(title)).order_by(self.model.last_played)
+        if query.count() == 0:
+            return None
+
+        return [_.as_dict() for _ in query]
 
     def get_song_hashes_by_length(self, length):
         """ Get the SHA-1 hash corresponding to the length
@@ -105,6 +132,10 @@ class DatabaseInterface():
         Keyword arguments:
             length: ...
 
-        Return: List of SHA-1 hashes or None if not found
+        Return: List of song metadata dictionaries or None if not found
         """
-        return None
+        query = self.db.query(self.model).filter(self.model.length == length).order_by(self.model.last_played)
+        if query.count() == 0:
+            return None
+
+        return [_.as_dict() for _ in query]

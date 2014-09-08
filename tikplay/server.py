@@ -49,7 +49,7 @@ class NowPlaying(Resource):
         GET now playing song
         """
         audio_api = current_app.config['audio_api']
-        return "hello world"
+        return jsonify(text=audio_api.now_playing(queue_length=1)[0])
 
 
 class Queue(Resource):
@@ -58,7 +58,7 @@ class Queue(Resource):
         GET the now_playing queue
         """
         audio_api = current_app.config['audio_api']
-        pass
+        return jsonify(text=audio_api.now_playing())
 
 
 class PlaySong(Resource):

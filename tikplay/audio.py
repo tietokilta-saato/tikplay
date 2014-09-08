@@ -58,3 +58,7 @@ class API():
             return [(src.info.author, src.info.title)]
         else:
             return None
+
+    def get_metadata(self, song_hash):
+        audio_file = self.media.load(os.path.abspath(os.path.join(self.media_dir, song_hash)))
+        return {'artist': audio_file.info.author, 'title': audio_file.info.title, 'length': audio_file.duration}

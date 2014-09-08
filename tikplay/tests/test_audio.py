@@ -1,4 +1,5 @@
 from tikplay import audio
+import unittest
 
 
 class AudioTestcase(unittest.TestCase):

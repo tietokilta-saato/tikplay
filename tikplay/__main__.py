@@ -54,7 +54,7 @@ if args.daemon:
         sys.exit(1)
 
 # Init classes
-_db = database.db
+_db = database.session
 _db_model = models.Song()
 _database_interface = interface.DatabaseInterface(db=_db, model=_db_model)
 _cache_handler = cache.Handler(di_cls=_database_interface)

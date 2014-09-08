@@ -1,7 +1,4 @@
-import json
 import logging
-import os
-import random
 
 
 class Handler():
@@ -43,10 +40,14 @@ class Handler():
         self.logger.info('Finding %s from database with method %s', (keyword, method))
         data = method(keyword)
         if data:
-            return json.dumps(data)
+            return data
 
         else:
             return None
 
-    def store(self, songhash, filename, artist, title, length):
-        pass
+    def store(self, song_hash, filename, artist, title, length):
+        result = self.di.add_song_metadata(song_hash, filename, artist, title, length, play_count=0, last_played=None)
+        return result
+
+    def play(self, song_hash):
+        return self.di.increment_play_count(song_hash) and self.di.set_last_played(song_hash)

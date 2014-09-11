@@ -2,18 +2,20 @@
 | Client |<-HTTP RESTful API->|{io}      Server      |
 +--------+                    +----------------------+
                               | HTTP API Handler     |
-                              +----------------------+
-                              | - GET                |
-                              |   - /now_playing     |
-                              |   - /queue           |
-                              |   - /find            |
-                              |       - /song_hash   |
-                              |       - /filename    |
-                              |       - /artist      |
-                              |       - /title       |
-                              |       - /length      |
-                              |   - /play            |
-                              |       - /song_hash   |
-                              | -  POST              |
-                              |   - /file            |
-                              +----------------------+
+                              +-------------------------------------+
+                              |   POST /srv/v1.0/file               |
+                              |     Upload a file to server         |
+                              |   POST /srv/v1.0/song/<sha1>        |
+                              |     Start playing a song            |
+                              |   GET /srv/v1.0/song                |
+                              |     Get now playing song            |
+                              |   GET /srv/v1.0/queue               |
+                              |     Get longer queue                |
+                              |   GET /srv/v1.0/find/<int>/<string> |
+                              |     Find a song with type <int>:    |
+                              |     1: song_hash                    |
+                              |     2: artist                       |
+                              |     3: title                        |
+                              |     4: length                       |
+                              |     5: filename                     |
+                              +-------------------------------------+

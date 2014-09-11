@@ -10,4 +10,5 @@
                                         |     - length         <Integer>  <nullable>  |
                                         |     - last_played    <DateTime> <nullable>  |
                                         |     - date_added     <DateTime> <nullable>  |
+										| - as_dict()                                 |
                                         +---------------------------------------------+

@@ -45,6 +45,7 @@ class API():
         self.player.add(filename)
         self.player.play()
         self._toggle_idle()
+        return self.now_playing(1)
 
     def next_(self):
         self._toggle_idle()

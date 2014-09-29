@@ -7,7 +7,7 @@ from hashlib import sha1
 
 __version__ = 'v1.0'
 url_base = '/srv/{}'.format(__version__)
-ALLOWED_EXTENSIONS = set(['mp3', 'ogg', 'wav'])
+ALLOWED_EXTENSIONS = {'mp3', 'ogg', 'wav'}
 
 
 class File(Resource):
@@ -71,10 +71,19 @@ class PlaySong(Resource):
         POST a new song to play. Do
 
         Keyword arguments:
-            song_sha1: identifying SHA1 hashsum calculated from the file
+            song_sha1: identifying SHA1 hash calculated from the file
         """
         audio_api = current_app.config['audio_api']
-        result = audio_api.play(song_sha1)
+        result = None
+        try:
+            result = audio_api.play(song_sha1)
+            if result is None:
+                text = "Song not found, please upload it"
+        except Exception as e:
+            text = str(e)
+
+        if result is None:
+            return jsonify(error=True, text=text)
         return jsonify(sha1=song_sha1, playing=result, error=False)
 
 

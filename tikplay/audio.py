@@ -43,6 +43,8 @@ class API():
         self._toggle_idle()
         self.player.update()
         real_song = self.player.search("filename", filename)
+        if not real_song:
+            return None
         self.player.add(real_song[0]['file'])
         self.player.play()
         self._toggle_idle()

@@ -4,14 +4,20 @@
          ^            music    | API   |
          |            flow     +-------+-----------------------+
          |                     | - play(song_hash)             |
+         |                     | - next_()                     |
+         |                     | - pause()                     |
+         |                     | - resume()                    |
+         |                     | - kill()                      |
          |                     | - now_playing(queue_length=1) |
+         |                     | - get_metadata(song_hash)     |
          |                     +-------------------------------+
          |
          |                     +---------+
          +--Control the cache->| Cache   |
             and find if songs  +---------+
             exist              | Handler |
-                               +---------+---------------------+
-                               | - find(keyword, column)       |
-                               | - store(filepointer)          |
-                               +-------------------------------+
+                               +---------+-------------------------------------------+
+                               | - find(keyword, column)                             |
+                               | - store(song_hash, filename, artist, title, length) |
+                               | - play(song_hash)                                   |
+                               +-----------------------------------------------------+

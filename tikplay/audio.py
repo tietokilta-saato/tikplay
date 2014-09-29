@@ -35,17 +35,20 @@ class API():
                 try:
                     self.player.noidle()
                 except Exception as e:
-                    self.logger.warn("Exception: " + str(e))
+                    self.logger.warn("Exception while sending noidle: " + str(e))
                     reconnect = True
             if not reconnect:
                 self.player.ping()
         except Exception as e:
-            self.logger.warn("Exception: " + str(e))
+            self.logger.warn("Exception while sending ping: " + str(e))
             reconnect = True
 
         if reconnect:
             self.logger.info("Reconnecting due to the exception above")
-            self.player.close()
+            try:
+                self.player.close()
+            except Exception as e:
+                self.logger.warn("Exception while closing connection: " + str(e))
             self.player = self.media_cls.MPDClient()
             self.player.timeout = 3
             self.player.idletimeout = None

@@ -21,20 +21,22 @@ class API():
         self.player.setvol(100)
         self.player.single(0)
         self.logger.info('Connected')
+        self.set_idle()
+
+    def set_idle(self):
         self.player.send_idle()
         self.idle = True
 
-    def _toggle_idle(self):
-        if self.idle:
-            self.player.noidle()
-            self.idle = False
-        else:
-            try:
-                self.player.send_idle()
-            except:
-                self.player.connect(*self.mpd_addr)
-                self.player.send_idle()
-            self.idle = True
+    def _check_connection(self):
+        try:
+            if self.idle:
+                self.player.noidle()
+            self.player.ping()
+        except Exception as e:
+            self.logger.warn("Exception: " + str(e))
+            self.player.close()
+            self.player.connect(*self.mpd_addr)
+            self.set_idle()
 
     def play(self, filename):
         """ Play a song or add it to queue if a song is already playing
@@ -45,35 +47,35 @@ class API():
         Return: true if started playing, false if added to queue
         """
         self.logger.info('Playing {}'.format(filename))
-        self._toggle_idle()
+        self._check_connection()
         self.player.update()
         real_song = self.player.search("filename", filename)
         if not real_song:
             return None
         self.player.add(real_song[0]['file'])
         self.player.play()
-        self._toggle_idle()
+        self.set_idle()
         return self.now_playing(1)[0]
 
     def next_(self):
-        self._toggle_idle()
+        self._check_connection()
         self.player.next()
-        self._toggle_idle()
+        self.set_idle()
 
     def pause(self):
-        self._toggle_idle()
+        self._check_connection()
         self.player.pause()
-        self._toggle_idle()
+        self.set_idle()
 
     def resume(self):
-        self._toggle_idle()
+        self._check_connection()
         self.player.play()
-        self._toggle_idle()
+        self.set_idle()
 
     def kill(self):
-        self._toggle_idle()
+        self._check_connection()
         self.player.clear()
-        self._toggle_idle()
+        self.set_idle()
 
     def now_playing(self, queue_length=10):
         """ Shows the now playing or the queue if queue_length is defined
@@ -83,7 +85,7 @@ class API():
 
         Return: the song that is now playing in the MPD format
         """
-        self._toggle_idle()
+        self._check_connection()
         res = self.player.playlistinfo()[:queue_length]
-        self._toggle_idle()
+        self.set_idle()
         return res

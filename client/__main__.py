@@ -32,15 +32,19 @@ def send_files(files, config):
             song = open(fn, "rb")
             sha1 = hashlib.sha1(song.read()).hexdigest()
             result = send_post(url_base + "/song/" + sha1)
-            if result is not None:
-                print(result)
+            if result is not None and not result["error"]:
+                print("OK")
                 continue
 
+            print("WTF: " + str(result))
+            print("File not found on the server, sending")
             song.seek(0)
             result = send_post(url_base + "/file", files={'file': song})
             if result is not None:
+                print("File sent successfully, adding to playlist")
                 result = send_post(url_base + "/song/" + result["key"])
-                print(result)
+                if result is not None:
+                    print("OK")
 
         else:
             print("Error: {} is not a supported URI nor an existing file\n".format(fn))

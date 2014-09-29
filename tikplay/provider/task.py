@@ -24,5 +24,5 @@ class Task(Thread):
         try:
             self.retriever.get(self.url)
         except Exception as e:
-            self.state = "exception" # TODO: enum
+            self.state = "exception"  # TODO: enum
             self.provider.child_exception_queue.put((self, e))

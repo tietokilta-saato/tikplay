@@ -2,9 +2,9 @@
 # Part of tikplay
 
 import os.path
-import subprocess
 import urllib.parse
 from ..retriever import Retriever
+from tikplay.utils.shell import call_subprocess
 
 
 class YouTubeRetriever(Retriever):
@@ -64,20 +64,8 @@ class YouTubeRetriever(Retriever):
 
         # Technically this could be called as pure Python, considering that youtube-dl is a Python program, but
         # this is probably a bit easier.
-        # TODO: Is this secure?
         outfile_format = os.path.join(self.conf["download_dir"], "%(id)s.%(ext)s")
         outfile = os.path.join(self.conf["download_dir"], video_id + ".mp3")
-        proc = subprocess.Popen(
-            ["youtube-dl", "-x", "--audio-format", "mp3", "-o", outfile_format, video_id],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
 
-        # TODO: Sanity checks for waiting time
-        if proc.wait() != 0:
-            # TODO: Non-UTF-8 locales
-            stdout = proc.stdout.read().decode()
-            stderr = proc.stderr.read().decode()
-            raise RuntimeError("Nonzero return value from youtube-dl\nstdout:\n{}\nstderr:\n{}".format(stdout, stderr))
-
+        call_subprocess("youtube-dl", "-x", "--audio-format", "mp3", "-o", outfile_format, video_id)
         return outfile

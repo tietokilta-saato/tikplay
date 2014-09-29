@@ -21,6 +21,15 @@ class API():
         self.player.single(0)
         self.logger.info('Connected')
         self.player.send_idle()
+        self.idle = True
+
+    def _toggle_idle(self):
+        if self.idle:
+            self.player.noidle()
+            self.idle = False
+        else:
+            self.player.send_idle()
+            self.idle = True
 
     def play(self, filename):
         """ Play a song or add it to queue if a song is already playing
@@ -31,31 +40,31 @@ class API():
         Return: true if started playing, false if added to queue
         """
         self.logger.info('Playing {}'.format(filename))
-        self.player.noidle()
+        self._toggle_idle()
         self.player.update()
         self.player.add(filename)
         self.player.play()
-        self.player.send_idle()
+        self._toggle_idle()
 
     def next_(self):
-        self.player.noidle()
+        self._toggle_idle()
         self.player.next()
-        self.player.send_idle()
+        self._toggle_idle()
 
     def pause(self):
-        self.player.noidle()
+        self._toggle_idle()
         self.player.pause()
-        self.player.send_idle()
+        self._toggle_idle()
 
     def resume(self):
-        self.player.noidle()
+        self._toggle_idle()
         self.player.play()
-        self.player.send_idle()
+        self._toggle_idle()
 
     def kill(self):
-        self.player.noidle()
+        self._toggle_idle()
         self.player.clear()
-        self.player.send_idle()
+        self._toggle_idle()
 
     def now_playing(self, queue_length=10):
         """ Shows the now playing or the queue if queue_length is defined
@@ -65,7 +74,7 @@ class API():
 
         Return: the song that is now playing in the MPD format
         """
-        self.player.noidle()
+        self._toggle_idle()
         res = self.player.playlistinfo()[:queue_length]
-        self.player.send_idle()
+        self._toggle_idle()
         return res

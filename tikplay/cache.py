@@ -45,9 +45,8 @@ class Handler():
         else:
             return None
 
-    def store(self, song_hash, filename, artist, title, length):
-        result = self.di.add_song_metadata(song_hash, filename, artist, title, length, play_count=0, last_played=None)
-        return result
+    def store(self, song_hash, filename):
+        pass
 
     def play(self, song_hash):
         return self.di.increment_play_count(song_hash) and self.di.set_last_played(song_hash)

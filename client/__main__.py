@@ -2,7 +2,6 @@
 
 import argparse
 import hashlib
-import importlib
 import json
 import os.path
 import requests

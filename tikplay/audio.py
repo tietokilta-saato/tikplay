@@ -11,6 +11,7 @@ class API():
     def __init__(self, media_cls, mpd_addr):
         self.logger = logging.getLogger('AudioAPI')
         self.logger.info('Connecting to MPD')
+        self.media_cls = media_cls
         self.player = media_cls.MPDClient()
         self.player.timeout = 3
         self.player.idletimeout = None
@@ -35,6 +36,9 @@ class API():
         except Exception as e:
             self.logger.warn("Exception: " + str(e))
             self.player.close()
+            self.player = self.media_cls.MPDClient()
+            self.player.timeout = 3
+            self.player.idletimeout = None
             self.player.connect(*self.mpd_addr)
             self.set_idle()
 

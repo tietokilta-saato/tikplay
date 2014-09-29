@@ -21,8 +21,8 @@ class File(Resource):
         cache_handler = current_app.config['cache_handler']
         audio_api = current_app.config['audio_api']
         file = request.files['file']
+        filename = secure_filename(file.filename)
         if file and self.__allowed_file(file):
-            filename = secure_filename(file.filename)
             calced_hash = sha1(file.stream.read()).hexdigest()
             file.stream.seek(0)
             _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1])
@@ -35,7 +35,7 @@ class File(Resource):
 
         else:
             return jsonify(filename="", saved=False,
-                           text="You have to send a file, e.g. curl -X POST -F file=@<file> <server_address>")
+                           text="You have to send a file, e.g. curl -X POST -F file=\"@<file>\" <server_address>")
 
 
 class NowPlaying(Resource):

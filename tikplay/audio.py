@@ -12,7 +12,7 @@ class API():
         self.logger = logging.getLogger('AudioAPI')
         self.logger.info('Connecting to MPD')
         self.player = media_cls.MPDClient()
-        self.player.timeout = 10
+        self.player.timeout = None
         self.player.idletimeout = None
         self.player.connect(*mpd_addr)
         self.player.consume(1)

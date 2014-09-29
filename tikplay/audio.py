@@ -37,12 +37,14 @@ class API():
                 except Exception as e:
                     self.logger.warn("Exception: " + str(e))
                     reconnect = True
-            self.player.ping()
+            if not reconnect:
+                self.player.ping()
         except Exception as e:
             self.logger.warn("Exception: " + str(e))
             reconnect = True
 
         if reconnect:
+            self.logger.info("Reconnecting due to the exception above")
             self.player.close()
             self.player = self.media_cls.MPDClient()
             self.player.timeout = 3
@@ -60,7 +62,6 @@ class API():
         """
         self.logger.info('Playing {}'.format(filename))
         self._check_connection()
-        self.player.update()
         real_song = self.player.search("filename", filename)
         if not real_song:
             return None
@@ -87,6 +88,11 @@ class API():
     def kill(self):
         self._check_connection()
         self.player.clear()
+        self.set_idle()
+
+    def update(self):
+        self._check_connection()
+        self.player.update()
         self.set_idle()
 
     def now_playing(self, queue_length=10):

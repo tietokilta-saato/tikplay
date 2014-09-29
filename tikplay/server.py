@@ -25,6 +25,7 @@ class File(Resource):
             file.stream.seek(0)
             _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1])
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], _filename))
+            current_app.config['audio_api'].update()
             return jsonify(filename=filename, saved=True, key=calced_hash,
                            text="File successfully saved as {}. Use this as key to play this file".format(calced_hash))
 

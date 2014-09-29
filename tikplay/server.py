@@ -18,8 +18,6 @@ class File(Resource):
         """
         POST a new song to save
         """
-        cache_handler = current_app.config['cache_handler']
-        audio_api = current_app.config['audio_api']
         file = request.files['file']
         filename = secure_filename(file.filename)
         if file and self.__allowed_file(file):
@@ -27,8 +25,8 @@ class File(Resource):
             file.stream.seek(0)
             _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1])
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], _filename))
-            return jsonify(filename=filename, saved=True, key=_filename,
-                           text="File successfully saved as {}. Use this as key to play this file".format(_filename))
+            return jsonify(filename=filename, saved=True, key=calced_hash,
+                           text="File successfully saved as {}. Use this as key to play this file".format(calced_hash))
 
         elif not self.__allowed_file(file):
             return jsonify(filename=filename, saved=False, text="Filetype not allowed!")
@@ -76,7 +74,6 @@ class PlaySong(Resource):
             song_sha1: identifying SHA1 hashsum calculated from the file
         """
         audio_api = current_app.config['audio_api']
-        cache_handler = current_app.config['audio_api']
         result = audio_api.play(song_sha1)
         return jsonify(sha1=song_sha1, playing=result, error=False)
 

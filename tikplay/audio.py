@@ -42,7 +42,8 @@ class API():
         self.logger.info('Playing {}'.format(filename))
         self._toggle_idle()
         self.player.update()
-        self.player.add(filename)
+        real_song = self.player.search("filename", filename)
+        self.player.add(real_song[0]['file'])
         self.player.play()
         self._toggle_idle()
         return self.now_playing(1)[0]

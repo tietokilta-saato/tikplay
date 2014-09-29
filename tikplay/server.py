@@ -1,8 +1,7 @@
 from flask import request, jsonify, current_app
 from flask.ext.restful import Resource
 from werkzeug.utils import secure_filename
-from statics import USAGE, INTERNAL_ERROR
-import configuration
+from pyglet.media.avbin import AVbinException
 import os
 from hashlib import sha1
 
@@ -21,14 +20,23 @@ class File(Resource):
         POST a new song to save
         """
         cache_handler = current_app.config['cache_handler']
+        audio_api = current_app.config['audio_api']
         file = request.files['file']
         if file and self.__allowed_file(file):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            return jsonify(filename=filename, saved=True, text="File successfully saved!")
+            calced_hash = sha1(file)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], calced_hash))
+            try:
+                song_meta = audio_api.get_metadata(calced_hash)
+            except AVbinException:
+                return jsonify(filename=filename, saved=None, text='Something weird happened, try again')
+
+            cache_handler.store(calced_hash, filename, **song_meta)
+            return jsonify(filename=filename, saved=True,
+                           text="File successfully saved as {}! Use this key to play this file".format(calced_hash))
 
         elif not self.__allowed_file(file):
-            return jsonify(filename=filename, saved=False, text="Extension not one of: {!r}".format(ALLOWED_EXTENSIONS))
+            return jsonify(filename=filename, saved=False, text="Filetype not allowed!")
 
         else:
             return jsonify(filename="", saved=False,
@@ -41,16 +49,7 @@ class NowPlaying(Resource):
         GET now playing song
         """
         audio_api = current_app.config['audio_api']
-        return "hello world"
-
-
-class PlaySong(Resource):
-    def post(self, song_sha1):
-        """
-        POST a new song to play
-        """
-        audio_api = current_app.config['audio_api']
-        return song_sha1
+        return jsonify(text=audio_api.now_playing(queue_length=1)[0])
 
 
 class Queue(Resource):
@@ -59,7 +58,26 @@ class Queue(Resource):
         GET the now_playing queue
         """
         audio_api = current_app.config['audio_api']
-        pass
+        return jsonify(text=audio_api.now_playing())
+
+
+class PlaySong(Resource):
+    def post(self, song_sha1):
+        """
+        POST a new song to play. Do
+
+        Keyword arguments:
+            song_sha1: identifying SHA1 hashsum calculated from the file
+        """
+        audio_api = current_app.config['audio_api']
+        cache_handler = current_app.config['audio_api']
+        try:
+            result = audio_api.play(song_sha1)
+            cache_handler.play(song_sha1)
+            return jsonify(sha1=song_sha1, playing=result, error=False)
+        except AVbinException:
+            return jsonify(sha1=song_sha1, playing=False, error=True,
+                           text='Song not found. Try finding the song first!')
 
 
 class Find(Resource):
@@ -69,7 +87,14 @@ class Find(Resource):
 
         Keyword arguments:
             find_type: valid values 1 (song_hash), 2 (artist), 3 (title), 4 (length), 5 (filename)
-            find_key: ...
+            find_key: value corresponding to the type: 1 (SHA1), 2 (String),
+                      3 (String), 4 (Integer (seconds)), 5 (filename)
         """
+        methods = ['song_hash', 'artist', 'title', 'length', 'filename']
         cache_handler = current_app.config['cache_handler']
-        return "{} {}".format(find_type, find_key)
+        # find_type is ints from 1 - 5, list indices are ints from 0 - 4
+        found = cache_handler.find(methods[find_type - 1], find_key)
+        if found is not None:
+            return jsonify(find_type=methods[find_type - 1], find_key=find_key, found=True, text=str(found))
+        else:
+            return jsonify(find_type=methods[find_type - 1], find_key=find_key, found=False)

@@ -50,7 +50,6 @@ class API():
             self.player.timeout = 3
             self.player.idletimeout = None
             self.player.connect(*self.mpd_addr)
-            self.set_idle()
 
     def play(self, filename):
         """ Play a song or add it to queue if a song is already playing

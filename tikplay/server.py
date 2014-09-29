@@ -1,7 +1,6 @@
 from flask import request, jsonify, current_app
 from flask.ext.restful import Resource
 from werkzeug.utils import secure_filename
-from pyglet.media.avbin import AVbinException
 import os
 from hashlib import sha1
 
@@ -24,16 +23,12 @@ class File(Resource):
         file = request.files['file']
         if file and self.__allowed_file(file):
             filename = secure_filename(file.filename)
-            calced_hash = sha1(file)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], calced_hash))
-            try:
-                song_meta = audio_api.get_metadata(calced_hash)
-            except AVbinException:
-                return jsonify(filename=filename, saved=None, text='Something weird happened, try again')
-
-            cache_handler.store(calced_hash, filename, **song_meta)
-            return jsonify(filename=filename, saved=True,
-                           text="File successfully saved as {}! Use this key to play this file".format(calced_hash))
+            calced_hash = sha1(file.stream.read()).hexdigest()
+            file.stream.seek(0)
+            _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1])
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], _filename))
+            return jsonify(filename=filename, saved=True, key=_filename,
+                           text="File successfully saved as {}. Use this as key to play this file".format(_filename))
 
         elif not self.__allowed_file(file):
             return jsonify(filename=filename, saved=False, text="Filetype not allowed!")
@@ -49,7 +44,14 @@ class NowPlaying(Resource):
         GET now playing song
         """
         audio_api = current_app.config['audio_api']
-        return jsonify(text=audio_api.now_playing(queue_length=1)[0])
+        return jsonify(text=audio_api.now_playing(queue_length=1))
+
+    def delete(self):
+        """
+        DELETE now playing song (i.e. skip a song)
+        """
+        audio_api = current_app.config['audio_api']
+        return jsonify(text=audio_api.next_())
 
 
 class Queue(Resource):
@@ -59,6 +61,10 @@ class Queue(Resource):
         """
         audio_api = current_app.config['audio_api']
         return jsonify(text=audio_api.now_playing())
+
+    def delete(self):
+        audio_api = current_app.config['audio_api']
+        return jsonify(text=audio_api.kill())
 
 
 class PlaySong(Resource):
@@ -71,13 +77,8 @@ class PlaySong(Resource):
         """
         audio_api = current_app.config['audio_api']
         cache_handler = current_app.config['audio_api']
-        try:
-            result = audio_api.play(song_sha1)
-            cache_handler.play(song_sha1)
-            return jsonify(sha1=song_sha1, playing=result, error=False)
-        except AVbinException:
-            return jsonify(sha1=song_sha1, playing=False, error=True,
-                           text='Song not found. Try finding the song first!')
+        result = audio_api.play(song_sha1)
+        return jsonify(sha1=song_sha1, playing=result, error=False)
 
 
 class Find(Resource):

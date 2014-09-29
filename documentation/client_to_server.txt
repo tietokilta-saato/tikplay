@@ -9,8 +9,12 @@
                               |     Start playing a song            |
                               |   GET /srv/v1.0/song                |
                               |     Get now playing song            |
+                              |   DELETE /srv/v1.0/song             |
+                              |     Get now playing song            |
                               |   GET /srv/v1.0/queue               |
                               |     Get longer queue                |
+                              |   DELETE /srv/v1.0/queue            |
+                              |		Kill tikplay queue              |
                               |   GET /srv/v1.0/find/<int>/<string> |
                               |     Find a song with type <int>:    |
                               |     1: song_hash                    |

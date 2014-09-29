@@ -3,7 +3,7 @@ import os
 import server
 from flask import Flask
 from flask.ext import restful
-import pyglet
+import mpd
 import configuration
 import database
 from database import models
@@ -58,7 +58,7 @@ _db = database.session
 _db_model = models.Song()
 _database_interface = interface.DatabaseInterface(db=_db, model=_db_model)
 _cache_handler = cache.Handler(di_cls=_database_interface)
-_audio_api = audio.API(media_cls=pyglet.media, media_dir=workdir)
+_audio_api = audio.API(media_cls=mpd, mpd_addr=("localhost", 6600))
 
 # Init flask
 url_base = server.url_base

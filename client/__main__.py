@@ -12,7 +12,17 @@ import sys
 def looks_like_uri(fn):
     return fn.startswith(("http://", "https://", "youtube:", "yt:"))
 
-def send_request(files, config):
+def send_post(url, **kwargs):
+    data = None
+    try:
+        data = requests.post(url, **kwargs)
+        return data.json()
+    except requests.exceptions.ConnectionError as e:
+        print("Connection error: " + str(e))
+    except ValueError:
+        print("Invalid JSON received: " + data.text)
+
+def send_files(files, config):
     url_base = "http://" + config["host"] + "/srv/v1.0"
     for fn in files:
         if config["verbose"]:
@@ -22,24 +32,16 @@ def send_request(files, config):
         elif os.path.exists(fn):
             song = open(fn, "rb")
             sha1 = hashlib.sha1(song.read()).hexdigest()
-            try:
-                data = requests.post(url_base + "/song/" + sha1)
-                print(data.text)
-                data = data.json()
-            except requests.exceptions.ConnectionError as e:
-                print("Connection error: " + str(e))
-                sys.exit(1)
-
-            if not data.get("error"):
-                print("OK")
+            result = send_post(url_base + "/song/" + sha1)
+            if result is not None:
+                print(result)
                 continue
 
-            try:
-                data = requests.post(url_base + "/file", files={'file': song})
-                print(data.text)
-            except requests.exceptions.ConnectionError as e:
-                print("Connection error: " + str(e))
-                sys.exit(1)
+            song.seek(0)
+            result = send_post(url_base + "/file", files={'file': song})
+            if result is not None:
+                result = send_post(url_base + "/song/" + result["key"])
+                print(result)
 
         else:
             print("Error: {} is not a supported URI nor an existing file\n".format(fn))
@@ -63,4 +65,4 @@ if __name__ == "__main__":
     config = json.load(open(args.config, "r"))
     config["verbose"] = args.verbose
 
-    send_request(args.files, config)
+    send_files(args.files, config)

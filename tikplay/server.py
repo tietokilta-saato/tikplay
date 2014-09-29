@@ -75,6 +75,7 @@ class PlaySong(Resource):
         """
         audio_api = current_app.config['audio_api']
         result = None
+        text = ""
         try:
             result = audio_api.play(song_sha1)
             if result is None:

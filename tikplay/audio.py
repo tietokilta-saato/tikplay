@@ -15,6 +15,7 @@ class API():
         self.player.timeout = None
         self.player.idletimeout = None
         self.player.connect(*mpd_addr)
+        self.mpd_addr = mpd_addr
         self.player.consume(1)
         self.player.repeat(0)
         self.player.setvol(100)
@@ -28,7 +29,11 @@ class API():
             self.player.noidle()
             self.idle = False
         else:
-            self.player.send_idle()
+            try:
+                self.player.send_idle()
+            except:
+                self.player.connect(*self.mpd_addr)
+                self.player.send_idle()
             self.idle = True
 
     def play(self, filename):

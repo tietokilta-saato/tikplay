@@ -29,12 +29,20 @@ class API():
         self.idle = True
 
     def _check_connection(self):
+        reconnect = False
         try:
             if self.idle:
-                self.player.noidle()
+                try:
+                    self.player.noidle()
+                except Exception as e:
+                    self.logger.warn("Exception: " + str(e))
+                    reconnect = True
             self.player.ping()
         except Exception as e:
             self.logger.warn("Exception: " + str(e))
+            reconnect = True
+
+        if reconnect:
             self.player.close()
             self.player = self.media_cls.MPDClient()
             self.player.timeout = 3

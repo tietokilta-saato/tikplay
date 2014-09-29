@@ -35,8 +35,7 @@ def send_files(files, config):
             if result is not None and not result["error"]:
                 print("OK")
                 continue
-
-            print("WTF: " + str(result))
+            
             print("File not found on the server, sending")
             song.seek(0)
             result = send_post(url_base + "/file", files={'file': song})

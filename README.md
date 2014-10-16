@@ -37,9 +37,10 @@ Client
 You can use the client locally but you need to pipe your connection
 through, for example, kekkonen. The following example will deploy the
 tikplay client on your machine. Pre-requisites:
-	- SSH with key authentication enabled
-	- Python 3.3 installed
-	- Pip installed for Python 3.3
+
+- SSH with key authentication enabled
+- Python 3.3 installed
+- Pip installed for Python 3.3
 
 ```
 $ curl -L https://github.com/tietokilta-saato/tikplay/archive/client-v1.0.0.tar.gz | tar xvz

@@ -85,6 +85,11 @@ def send_clear(config):
     print(result)
 
 
+def gen_config(target, **kwargs):
+    with open(target, 'w') as fp:
+        json.dump(kwargs, fp)
+
+
 if __name__ == "__main__":
     # Parse the arguments
     parser = argparse.ArgumentParser(prog="tikplay", description="tikplay - play that funky music")
@@ -103,12 +108,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args(sys.argv[1:])
     if not os.path.exists(args.config):
-        # TODO: Generate configuration stub if missing
-        print("Error: The configuration file does not exist.")
-        sys.exit(1)
+        print("Error: The configuration file does not exist. Generating a default config to %s" % args.config)
+        gen_config(args.config, verbose=True, host="tikradio.tt.hut.fi:5000")
 
     # Load the configuration
-    cfg = json.load(open(args.config, "r"))
+    with open(args.config, 'r') as fp:
+        cfg = json.load(fp)
+
     cfg["verbose"] = args.verbose
 
     if args.cmd == "play":

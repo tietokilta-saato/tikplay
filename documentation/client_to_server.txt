@@ -5,8 +5,12 @@
                               +-------------------------------------+
                               |   POST /srv/v1.0/file               |
                               |     Upload a file to server         |
-                              |   POST /srv/v1.0/song/<sha1>        |
+                              |   POST /srv/v1.0/song/<id>          |
                               |     Start playing a song            |
+                              |     ID is generally a SHA1 of the   |
+                              |     song except for special cases:  |
+                              |       ID can start with:            |
+                              |         - yt: for youtube ID's      |
                               |   GET /srv/v1.0/song                |
                               |     Get now playing song            |
                               |   DELETE /srv/v1.0/song             |
@@ -14,7 +18,7 @@
                               |   GET /srv/v1.0/queue               |
                               |     Get longer queue                |
                               |   DELETE /srv/v1.0/queue            |
-                              |		Kill tikplay queue              |
+                              |     Kill tikplay queue              |
                               |   GET /srv/v1.0/find/<int>/<string> |
                               |     Find a song with type <int>:    |
                               |     1: song_hash                    |

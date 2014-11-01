@@ -94,6 +94,9 @@ class PlaySong(Resource):
             try:
                 if song_sha1.startswith('yt:'):
                     self.prov.get('https://youtu.be/{}'.format(song_sha1))
+                else:
+                    # Generic case with any URL
+                    self.prov.get(song_sha1)
             except ValueError as e:
                 text = str(e)
 

@@ -3,6 +3,7 @@ from flask.ext.restful import Resource
 from werkzeug.utils import secure_filename
 import os
 from hashlib import sha1
+import re
 
 
 __version__ = 'v1.0'
@@ -67,6 +68,16 @@ class Queue(Resource):
 
 
 class PlaySong(Resource):
+    prov = None
+    sha1_re = re.compile('^[0-9a-f]{40}$')
+
+    def is_sha1(self, sha1_candidate):
+        return self.sha1_re.match(sha1_candidate)
+
+    def init_providers(self):
+        from provider.provider import Provider
+        self.prov = Provider(conf={'download_dir': current_app.config['UPLOAD_FOLDER']})
+
     def post(self, song_sha1):
         """
         POST a new song to play. Do
@@ -77,6 +88,15 @@ class PlaySong(Resource):
         audio_api = current_app.config['audio_api']
         result = None
         text = ""
+        if not self.is_sha1(song_sha1):
+            if self.prov is None:
+                self.init_providers()
+            try:
+                if song_sha1.startswith('yt:'):
+                    self.prov.get('https://youtu.be/{}'.format(song_sha1))
+            except ValueError as e:
+                text = str(e)
+
         try:
             result = audio_api.play(song_sha1)
             if result is None:

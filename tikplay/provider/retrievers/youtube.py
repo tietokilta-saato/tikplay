@@ -79,5 +79,5 @@ class YouTubeRetriever(Retriever):
                 preferredquality="4"
             ))
             ydl.add_post_processor(youtube_dl.FFmpegMetadataPP())
-            ydl.download([video_id])
+            ydl.download(["https://youtu.be/" + video_id])
         return outfile

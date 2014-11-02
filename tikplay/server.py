@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 
 import cache
 import traceback
+from audio import play_file
 from provider.provider import Provider
 from provider.task import TaskState
 from utils import is_uri, is_url
@@ -83,7 +84,12 @@ class Song(Resource):
         POST a new song to play by URI/URL.
         """
 
-        uri = request.data.decode()
+        try:
+            data = json.loads(request.data.decode())
+        except ValueError:
+            return jsonify(error=True, text="Invalid JSON given")
+
+        uri = data["url"]
         if not uri:
             return jsonify(error=True, text="Invalid URI")
 
@@ -96,31 +102,22 @@ class Song(Resource):
         audio_api = current_app.config['audio_api']
         fn = self.cache.get_song(uri)
         if fn is not None:
-            try:
-                if song_sha1.startswith('yt:'):
-                    self.prov.get('https://youtu.be/{}'.format(song_sha1))
-            except ValueError as e:
-                text = str(e)
+            return play_file(
+                audio_api, current_app.config['songlogger'], fn, data.get("filename", uri), user=data["user"]
+            )
 
         try:
             task = self.prov.get(uri)
         except ValueError:
             return jsonify(error=True, text="No provider found for " + uri)
 
-        if task.state == TaskState.done:  # Some tasks might be instantaneous
-            try:
-                result = audio_api.play(fn)
-                if result is None:
-                    return jsonify(error=True, text="Unknown error while playing the song")
-                return jsonify(error=False, text="OK")
-            except Exception as e:
-                return jsonify(error=True, text=traceback.format_exc())
-
         if task.state == TaskState.exception:
             return jsonify(error=True, text=traceback.format_exception_only(type(task.exception), task.exception))
 
         current_app.config['task_dict'][task.id] = task
-        return jsonify(error=False, task=task.id, text="Task received")
+        task.metadata['user'] = data.get('user', 'anonymous')
+        task.metadata['original_filename'] = data.get('filename', uri)
+        return jsonify(error=False, task=task.id, text="Task received, fetching song")
 
 
 class Task(Resource):

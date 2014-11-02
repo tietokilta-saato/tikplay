@@ -3,10 +3,29 @@
 import argparse
 import hashlib
 import json
+import os
 import os.path
+import platform
 import requests
 import requests.exceptions
 import sys
+
+try:
+    import pwd
+    pwd_available = True
+except ImportError:
+    import getpass
+    pwd_available = False
+
+
+def whoami():
+    # Prefer the pwd module, which is available only on Unix systems, as getpass relies on environment variables
+    node = platform.node()
+    if not node:
+        node = "unknown"
+    if pwd_available:
+        return "{}@{}".format(pwd.getpwuid(os.getuid())[0], node)
+    return "{}@{}".format(getpass.getuser(), node)
 
 
 def wrap_request(method, *args_, **kwargs):
@@ -32,24 +51,32 @@ def send_delete(url, **kwargs):
     return wrap_request(requests.delete, url, **kwargs)
 
 
-def send_files(files, config):
+def send_song(files, config):
     url_base = "http://" + config["host"] + "/srv/v1.0"
     for fn in files:
+        data = {
+            "user": whoami()
+        }
+
         if config["verbose"]:
             print("Checking filename/URI {}".format(fn))
 
         # URI
         if not os.path.exists(fn):
-            result = send_post(url_base + "/song", data=fn)
-            print(result)
+            data["url"] = fn
+            result = send_post(url_base + "/song", data=json.dumps(data))
+            if result is not None:
+                print(result["text"])
             return
 
         # File
+        data["filename"] = os.path.basename(fn)
         song = open(fn, "rb")
         sha1 = hashlib.sha1(song.read()).hexdigest()
-        result = send_post(url_base + "/song", data="sha1:" + sha1)
+        data["url"] = "sha1:" + sha1
+        result = send_post(url_base + "/song", data=json.dumps(data))
         if result is not None and not result["error"]:
-            print("OK")
+            print(result["text"])
             continue
 
         print("File not found on the server, sending")
@@ -57,9 +84,10 @@ def send_files(files, config):
         result = send_post(url_base + "/file", files={'file': song})
         if result is not None:
             print("File sent successfully, adding to playlist")
-            result = send_post(url_base + "/song", data=result["key"])
+            data["url"] = result["key"]
+            result = send_post(url_base + "/song", data=json.dumps(data))
             if result is not None:
-                print("OK")
+                print(result["text"])
 
 
 def send_np(config):
@@ -115,7 +143,7 @@ if __name__ == "__main__":
     cfg["verbose"] = args.verbose
 
     if args.cmd == "play":
-        send_files(args.files, cfg)
+        send_song(args.files, cfg)
 
     elif args.cmd == "np":
         send_np(cfg)

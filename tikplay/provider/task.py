@@ -28,6 +28,7 @@ class Task(Thread):
         self.data = None
         self.daemon = True
         self.exception = None
+        self.metadata = {}
         self.log = logging.Logger("Task ({}: {})".format(retriever.name, uri))
 
     def run(self):

@@ -6,6 +6,7 @@ import os.path
 import re
 import requests
 from provider.retriever import Retriever
+from utils import is_url
 from utils.shell import call_subprocess
 
 
@@ -28,7 +29,7 @@ class GenericURLRetriever(Retriever):
         self.priority = 9001  # This is a generic handler, so we want a low priority for it (big = lower priority)
 
     def handles_url(self, url):
-        return True
+        return is_url(url)
 
     def canonicalize_url(self, url):
         if not self.handles_url(url):

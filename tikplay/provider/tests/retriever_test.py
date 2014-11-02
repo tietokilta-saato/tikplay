@@ -11,7 +11,7 @@ class TestRetriever(object):
 
     @raises(NotImplementedError)
     def test_handles(self):
-        self.retriever.handles("")
+        self.retriever.handles_url("")
 
     @raises(NotImplementedError)
     def test_get(self):

@@ -13,13 +13,14 @@ class TaskWatcher(Thread):
     Watches the task dict for asynchronous download tasks that are complete, then moves them to the correct directory
     and adds them to the play queue.
     """
-    def __init__(self, task_dict, cache, audio_api):
+    def __init__(self, task_dict, cache, audio_api, songlogger):
         Thread.__init__(self)
         self.log = logging.getLogger("TaskWatcher")
         self.daemon = True
         self.tasks = task_dict
         self.cache = cache
         self.audio_api = audio_api
+        self.songlogger = songlogger
 
     def run(self):
         self.log.info("Task watcher running")
@@ -36,8 +37,15 @@ class TaskWatcher(Thread):
                     new_fn = self.cache.move_song(task.uri, task.filename)
                     self.log.debug("Task %d (%s) moved to cache, %s", task.id, task.uri, new_fn)
 
+                    # A small hack, preferrably use mpd's auto_update instead of this
+                    # This delay is acceptable as tasks only are run when the file is not in the cache
+                    self.audio_api.update(task.uri.split(":", 1)[0])
+                    time.sleep(2.0)
+
                     try:
                         result = self.audio_api.play(new_fn)
+                        self.songlogger.write(task.metadata.get("user"),
+                                              task.metadata.get("original_filename", task.uri))
                         if result is None:
                             task.state = TaskState.exception
                         else:

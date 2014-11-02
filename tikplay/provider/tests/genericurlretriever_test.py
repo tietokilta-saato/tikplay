@@ -16,14 +16,14 @@ class TestGenericURLRetriever(object):
         self.retriever = GenericURLRetriever(self.conf)
 
     def test_handles(self):
-        assert self.retriever.handles("https://archive.org/download/testmp3testfile/mpthreetest.mp3")
-        assert not self.retriever.handles("not a url")
+        assert self.retriever.handles_url("https://archive.org/download/testmp3testfile/mpthreetest.mp3")
+        assert not self.retriever.handles_url("not a url")
 
     def test_download_non_mp3(self):
         """
         Test downloading a known non-MP3 file that should be converted before using.
         """
-        fn = self.retriever.get("http://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg")
+        fn = self.retriever.get("url:http://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg")
         assert os.path.exists(fn)
         proc = call_subprocess("ffprobe", "-v", "quiet", "-show_format", "-of", "json", fn)
         fmt = json.loads(proc.stdout.read().decode())
@@ -33,7 +33,7 @@ class TestGenericURLRetriever(object):
         """
         Test downloading a known MP3 file.
         """
-        fn = self.retriever.get("https://ia700200.us.archive.org/1/items/testmp3testfile/mpthreetest.mp3")
+        fn = self.retriever.get("url:https://ia700200.us.archive.org/1/items/testmp3testfile/mpthreetest.mp3")
         assert os.path.exists(fn)
         proc = call_subprocess("ffprobe", "-v", "quiet", "-show_format", "-of", "json", fn)
         fmt = json.loads(proc.stdout.read().decode())

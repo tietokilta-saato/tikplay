@@ -10,6 +10,7 @@ import audio
 import cache
 import server
 import watcher
+from songlogger import SongLogger
 
 logging.basicConfig(
     level=logging.DEBUG
@@ -22,9 +23,13 @@ _argparser.add_argument('-tf', '--testing-flask', help='Enable flask testing mod
 _argparser.add_argument('-D', '--daemon', help="Fork in to the background", default=False, action='store_true')
 _argparser.add_argument('-p', '--port', help='Port that we should listen (Default: 5000)', type=int, default=5000)
 _argparser.add_argument('-s', '--song-dir',
-                        help='Directory to which store technical copies of the songs (Default: ~/.tikplay_music)',
+                        help='Directory to which store technical copies of the songs (Default: ~/.tikplay/music)',
                         type=str,
-                        default='~/.tikplay_music')
+                        default='~/.tikplay/music')
+_argparser.add_argument('-l', '--log-file',
+                        help='The song log file to use (Default: ~/.tikplay/log)',
+                        type=str,
+                        default='~/.tikplay/log')
 args = _argparser.parse_args()
 
 # Daemonize
@@ -66,9 +71,10 @@ if not os.path.exists(os.path.join(args.song_dir, "sha1")):
 task_dict = {}
 cache_handler = cache.Cache(args.song_dir)
 audio_api = audio.API(media_cls=mpd, mpd_addr=("localhost", 6600))
+songlogger = SongLogger(args.log_file)
 
 # Init the watcher
-watcher_thread = watcher.TaskWatcher(task_dict, cache_handler, audio_api)
+watcher_thread = watcher.TaskWatcher(task_dict, cache_handler, audio_api, songlogger)
 watcher_thread.start()
 
 # Init flask
@@ -82,6 +88,7 @@ tikserver.config['song_dir'] = args.song_dir
 tikserver.config['task_dict'] = task_dict
 tikserver.config['cache_handler'] = cache_handler
 tikserver.config['audio_api'] = audio_api
+tikserver.config['songlogger'] = songlogger
 tikserver.config['UPLOAD_FOLDER'] = os.path.join(args.song_dir, "sha1")
 
 tikserver_api = restful.Api(tikserver)

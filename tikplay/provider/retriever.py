@@ -13,7 +13,7 @@ class Retriever(object):
         """Priority of the retriever, smaller number being higher priority"""
 
         self.conf = conf
-        self.log = logging.getLogger(self.name)
+        self.log = logging.getLogger(self.__class__.__name__)
 
     def get(self, uri):
         """

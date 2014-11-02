@@ -3,8 +3,8 @@
 
 import os.path
 import urllib.parse
+import youtube_dl
 from ..retriever import Retriever
-from utils.shell import call_subprocess
 
 
 class YouTubeRetriever(Retriever):
@@ -66,11 +66,18 @@ class YouTubeRetriever(Retriever):
 
     def get(self, uri):
         video_id = uri.split(":")[1]
-
-        # Technically this could be called as pure Python, considering that youtube-dl is a Python program, but
-        # this is probably a bit easier.
-        outfile_format = os.path.join(self.conf["download_dir"], "%(id)s.%(ext)s")
         outfile = os.path.join(self.conf["download_dir"], video_id + ".mp3")
 
-        call_subprocess("youtube-dl", "-x", "--audio-format", "mp3", "--add-metadata", "-o", outfile_format, video_id)
+        ydl_opts = {
+            "logger": self.log,
+            "outtmpl": os.path.join(self.conf["download_dir"], "%(id)s.%(ext)s")
+        }
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.add_post_processor(youtube_dl.FFmpegExtractAudioPP(
+                preferredcodec="mp3",
+                preferredquality="4"
+            ))
+            ydl.add_post_processor(youtube_dl.FFmpegMetadataPP())
+            ydl.download([video_id])
         return outfile

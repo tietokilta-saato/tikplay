@@ -4,6 +4,7 @@
 import os.path
 import tempfile
 from nose.tools import *
+from youtube_dl import DownloadError
 from tikplay.provider.retrievers.youtube import YouTubeRetriever
 
 
@@ -15,16 +16,16 @@ class TestYouTubeRetriever(object):
 
     def test_handles(self):
         """Tests the handling of different valid and invalid URLs."""
-        assert self.retriever.handles("http://www.youtube.com/watch?v=oHg5SJYRHA0")
-        assert self.retriever.handles("https://www.youtube.com/watch?v=oHg5SJYRHA0")
-        assert self.retriever.handles("http://youtu.be/oHg5SJYRHA0")
-        assert self.retriever.handles("https://youtu.be/oHg5SJYRHA0")
-        assert not self.retriever.handles("http://www.youtube.com")
-        assert not self.retriever.handles("http://www.youtube.com/watch")
-        assert not self.retriever.handles("http://www.youtube.com/watch?v=")
-        assert not self.retriever.handles("http://www.youtube.com/watch?x=12345")
-        assert not self.retriever.handles("https://youtu.be/")
-        assert not self.retriever.handles("http://google.com")
+        assert self.retriever.handles_url("http://www.youtube.com/watch?v=oHg5SJYRHA0")
+        assert self.retriever.handles_url("https://www.youtube.com/watch?v=oHg5SJYRHA0")
+        assert self.retriever.handles_url("http://youtu.be/oHg5SJYRHA0")
+        assert self.retriever.handles_url("https://youtu.be/oHg5SJYRHA0")
+        assert not self.retriever.handles_url("http://www.youtube.com")
+        assert not self.retriever.handles_url("http://www.youtube.com/watch")
+        assert not self.retriever.handles_url("http://www.youtube.com/watch?v=")
+        assert not self.retriever.handles_url("http://www.youtube.com/watch?x=12345")
+        assert not self.retriever.handles_url("https://youtu.be/")
+        assert not self.retriever.handles_url("http://google.com")
 
     def test_parse_id(self):
         """Tests that video IDs are parsed correctly."""
@@ -41,7 +42,7 @@ class TestYouTubeRetriever(object):
         """Tests parsing an invalid path in youtube.com."""
         self.retriever.parse_id("http://youtube.com/help")
 
-    @raises(RuntimeError)
+    @raises(DownloadError)
     def test_get_invalid_id(self):
         """Tests retrieving a non-existent video ID, which should lead to youtube-dl returning an error."""
         self.retriever.get("http://www.youtube.com/watch?v=invalid")

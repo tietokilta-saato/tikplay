@@ -1,4 +1,27 @@
 import logging
+import traceback
+from flask import jsonify
+
+
+def play_file(audio_api, songlogger, fn, filename, user=None):
+    """
+    Attempts to add the given file to the play queue and log it.
+    :param audio_api: The audio API to use
+    :param songlogger: The SongLogger instance to use for logging
+    :param fn: The filename to play
+    :param filename: The original filename of the file (if known) or the URI of the song
+    :param user: The user who sent this request, for logging purposes
+    :return: flask.Response
+    """
+    # noinspection PyBroadException
+    try:
+        result = audio_api.play(fn)
+        if result is None:
+            return jsonify(error=True, text="Unknown error while playing the song")
+        songlogger.write(user, filename)
+        return jsonify(error=False, text="OK")
+    except Exception as e:
+        return jsonify(error=True, text=traceback.format_exc())
 
 
 class API():
@@ -93,9 +116,12 @@ class API():
         self.player.clear()
         self.set_idle()
 
-    def update(self):
+    def update(self, directory=None):
         self._check_connection()
-        self.player.update()
+        if directory:
+            self.player.update(directory)
+        else:
+            self.player.update()
         self.set_idle()
 
     def now_playing(self, queue_length=10):

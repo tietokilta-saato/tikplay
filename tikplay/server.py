@@ -128,7 +128,7 @@ class Task(Resource):
         :return:
         """
 
-        task = current_app.config['task_dict'].find(id_, None)
+        task = current_app.config['task_dict'].get(id_, None)
         if task is None:
             return jsonify(error=True, text="Task not found")
         return jsonify(id=task.id, state=task.state, url=task.url)

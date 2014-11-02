@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # Part of tikplay
 
-import enum
+try:
+    import enum
+except ImportError:
+    import future.enum as enum
+
 import logging
 from threading import Thread
 

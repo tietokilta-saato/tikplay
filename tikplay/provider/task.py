@@ -1,28 +1,43 @@
 #!/usr/bin/env python
 # Part of tikplay
 
+import enum
 import logging
 from threading import Thread
+
+# Because PyCharm does not like the functional enum syntax:
+# noinspection PyArgumentList
+TaskState = enum.Enum('TaskState', 'new running ready done exception')
 
 
 class Task(Thread):
     """
     Represents the state of a URL retrieval task.
     """
+    _next_id = 1
 
-    def __init__(self, url, retriever, provider):
+    def __init__(self, uri, retriever, provider):
         Thread.__init__(self)
-        self.state = None
-        self.url = url
+        self.id = Task._next_id
+        Task._next_id += 1
+        self.state = TaskState.new
+        self.uri = uri
         self.retriever = retriever
         self.provider = provider
+        self.filename = None
         self.data = None
         self.daemon = True
-        self.log = logging.Logger("Task ({}: {})".format(retriever.name, url))
+        self.exception = None
+        self.log = logging.Logger("Task ({}: {})".format(retriever.name, uri))
 
     def run(self):
+        self.log.debug("Starting task {} ({}), using retriever {}", self.id, self.uri, self.retriever.name)
         try:
-            self.retriever.get(self.url)
+            self.state = TaskState.running
+            self.filename = self.retriever.get(self.uri)
+            self.state = TaskState.ready
+
         except Exception as e:
-            self.state = "exception"  # TODO: enum
+            self.state = TaskState.exception
+            self.exception = e
             self.provider.child_exception_queue.put((self, e))

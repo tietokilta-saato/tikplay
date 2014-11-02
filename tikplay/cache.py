@@ -1,52 +1,57 @@
 import logging
+import os
+import os.path
 
 
-class Handler():
-    def __init__(self, di_cls):
-        self.di = di_cls
-        self.logger = logging.getLogger('AudioCache')
+class Cache:
+    def __init__(self, directory):
+        self.dir = os.path.expanduser(directory)
+        self.log = logging.getLogger('AudioCache')
 
-    def find(self, keyword, column):
-        """ Find a song from the database based on a certain keyword
-        Keyword arguments:
-            keyword: the keyword to search with
-            column (optional):
-                the column to search from with the keyword, valid values: song_hash, filename, artist, title, length
+        if not os.path.exists(self.dir):
+            self.log.info("Cache directory does not exist, creating")
+            os.makedirs(self.dir)
 
-        Return: The data that exists in the database in JSON format or None
-
-        Raise: KeyError if unknown column
+    def get_song(self, uri):
         """
-        if column == 'song_hash':
-            return self.__find_with_method(keyword, self.di.get_song_metadata)
+        :param uri: URI specifying the song to find
+        :return: The filename relative to the cache directory or None
+        """
+        service, id_ = uri.split(":", 1)
+        id_ = self.sanitize(id_)
 
-        elif column == 'filename':
-            return self.__find_with_method(keyword, self.di.get_song_hashes_by_filename)
+        fn = os.path.join(self.dir, service, id_) + ".mp3"
+        if os.path.exists(fn):
+            self.log.debug("%s was found in the cache", fn)
+            return os.path.join(service, id_)
 
-        elif column == 'artist':
-            return self.__find_with_method(keyword, self.di.get_song_hashes_by_artist)
+        self.log.debug("%s was not found in the cache", fn)
+        return None
 
-        elif column == 'title':
-            return self.__find_with_method(keyword, self.di.get_song_hashes_by_title)
+    @staticmethod
+    def sanitize(id_):
+        """
+        Sanitize the given ID so it contains no characters not allowed in filenames.
+        :param id_: The ID to sanitize
+        :return: The sanitized ID
+        """
+        return id_.replace("/", "_").replace("~", "_")
 
-        elif column == 'length':
-            return self.__find_with_method(keyword, self.di.get_song_hashes_by_length)
+    def move_song(self, uri, fn):
+        """
+        Moves the song in `fn` to the correct location as specified by the URI.
+        :param uri: URI specifying the song
+        :param fn: The current location of the file
+        :return: The new filename of the song
+        """
 
-        else:
-            self.logger.warn('Tried finding "%s" unknown column: %s', (keyword, column))
-            raise KeyError('Unknown column')
+        service, id_ = uri.split(":", 1)
+        id_ = self.sanitize(id_)
+        service_dir = os.path.join(self.dir, service)
+        if not os.path.exists(service_dir):
+            self.log.info("Cache directory for %s does not exist, creating", service)
+            os.mkdir(service_dir)
 
-    def __find_with_method(self, keyword, method):
-        self.logger.info('Finding %s from database with method %s', (keyword, method))
-        data = method(keyword)
-        if data:
-            return data
-
-        else:
-            return None
-
-    def store(self, song_hash, filename):
-        pass
-
-    def play(self, song_hash):
-        return self.di.increment_play_count(song_hash) and self.di.set_last_played(song_hash)
+        new_fn = os.path.join(service_dir, id_) + ".mp3"  # A small hack so mpd reads the file despite the actual format
+        os.rename(os.path.expanduser(fn), os.path.expanduser(new_fn))
+        return os.path.join(service, id_)

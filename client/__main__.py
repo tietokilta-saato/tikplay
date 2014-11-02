@@ -9,10 +9,6 @@ import requests.exceptions
 import sys
 
 
-def looks_like_uri(fn):
-    return fn.startswith(("http://", "https://", "youtube:", "yt:"))
-
-
 def wrap_request(method, *args_, **kwargs):
     data = None
     try:
@@ -41,28 +37,29 @@ def send_files(files, config):
     for fn in files:
         if config["verbose"]:
             print("Checking filename/URI {}".format(fn))
-        if looks_like_uri(fn):
-            pass
-        elif os.path.exists(fn):
-            song = open(fn, "rb")
-            sha1 = hashlib.sha1(song.read()).hexdigest()
-            result = send_post(url_base + "/song/" + sha1)
-            if result is not None and not result["error"]:
-                print("OK")
-                continue
 
-            print("File not found on the server, sending")
-            song.seek(0)
-            result = send_post(url_base + "/file", files={'file': song})
-            if result is not None:
-                print("File sent successfully, adding to playlist")
-                result = send_post(url_base + "/song/" + result["key"])
-                if result is not None:
-                    print("OK")
+        # URI
+        if not os.path.exists(fn):
+            result = send_post(url_base + "/song", data=fn)
+            print(result)
+            return
 
-        else:
-            print("Error: {} is not a supported URI nor an existing file\n".format(fn))
+        # File
+        song = open(fn, "rb")
+        sha1 = hashlib.sha1(song.read()).hexdigest()
+        result = send_post(url_base + "/song", data="sha1:" + sha1)
+        if result is not None and not result["error"]:
+            print("OK")
             continue
+
+        print("File not found on the server, sending")
+        song.seek(0)
+        result = send_post(url_base + "/file", files={'file': song})
+        if result is not None:
+            print("File sent successfully, adding to playlist")
+            result = send_post(url_base + "/song", data=result["key"])
+            if result is not None:
+                print("OK")
 
 
 def send_np(config):
@@ -86,8 +83,8 @@ def send_clear(config):
 
 
 def gen_config(target, **kwargs):
-    with open(target, 'w') as fp:
-        json.dump(kwargs, fp)
+    with open(target, 'w') as f:
+        json.dump(kwargs, f, indent=4)
 
 
 if __name__ == "__main__":

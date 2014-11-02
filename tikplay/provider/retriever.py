@@ -13,14 +13,27 @@ class Retriever(object):
         """Priority of the retriever, smaller number being higher priority"""
 
         self.conf = conf
-        self.log = logging.Logger(self.name)
+        self.log = logging.getLogger(self.name)
 
-    def handles(self, url):
-        """Returns whether or not the retriever can handle the given URL."""
+    def get(self, uri):
+        """
+        Return the audio file from the URI.
+        :return: The filename of the downloaded file
+        """
         raise NotImplementedError
 
-    def get(self, url):
-        """Return the audio file from the URL."""
+    def handles_url(self, url):
+        """
+        Returns whether or not the handler can handle the given URL.
+        """
+        raise NotImplementedError
+
+    def canonicalize_url(self, url):
+        """
+        Return a canonical URI for the URL. Raises a ValueError if the handler cannot handle the URL.
+        :param url: The URL to canonicalize
+        :return: A canonical URI for the URL
+        """
         raise NotImplementedError
 
     def __str__(self):

@@ -4,17 +4,22 @@
 import os.path
 import urllib.parse
 from ..retriever import Retriever
-from tikplay.utils.shell import call_subprocess
+from utils.shell import call_subprocess
 
 
 class YouTubeRetriever(Retriever):
-    hosts = ["youtube.com", "youtu.be"]
+    uri_service = "yt"
 
     def __init__(self, conf):
         Retriever.__init__(self, conf)
         self.name = "YouTube"
 
-    def handles(self, url):
+    def canonicalize_url(self, url):
+        if not self.handles_url(url):
+            raise ValueError("Invalid YouTube URL: " + url)
+        return "yt:" + self.parse_id(url)
+
+    def handles_url(self, url):
         _scheme, netloc, path, params, query, fragment = urllib.parse.urlparse(url)
 
         # TODO: Metadata checking against DoS via 10-hour videos etc.
@@ -59,13 +64,13 @@ class YouTubeRetriever(Retriever):
         else:
             raise ValueError("Unable to parse YouTube URL: " + url)
 
-    def get(self, url):
-        video_id = self.parse_id(url)
+    def get(self, uri):
+        video_id = uri.split(":")[1]
 
         # Technically this could be called as pure Python, considering that youtube-dl is a Python program, but
         # this is probably a bit easier.
         outfile_format = os.path.join(self.conf["download_dir"], "%(id)s.%(ext)s")
         outfile = os.path.join(self.conf["download_dir"], video_id + ".mp3")
 
-        call_subprocess("youtube-dl", "-x", "--audio-format", "mp3", "-o", outfile_format, video_id)
+        call_subprocess("youtube-dl", "-x", "--audio-format", "mp3", "--add-metadata", "-o", outfile_format, video_id)
         return outfile

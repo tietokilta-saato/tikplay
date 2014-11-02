@@ -22,6 +22,7 @@ class API():
         self.player.setvol(100)
         self.player.single(0)
         self.logger.info('Connected')
+        self.idle = False
         self.set_idle()
 
     def set_idle(self):

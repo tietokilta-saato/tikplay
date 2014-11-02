@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # Part of tikplay
 
+import importlib
 import logging
 import queue
 from inspect import isclass
-import tikplay.provider.retrievers as retrievers
+import provider.retrievers as retrievers
 from .retriever import Retriever
 from .task import Task
 
@@ -28,6 +29,7 @@ class Provider(object):
     def register_all(self):
         """Attempts to automatically register all retrievers in the relevant subdirectory."""
         for module in retrievers.__all__:
+            module = importlib.import_module('provider.retrievers.' + module)
             for name, retriever in module.__dict__.items():
                 # Discard non-classes
                 if not isclass(retriever):
@@ -49,18 +51,26 @@ class Provider(object):
         self.retrievers.append(instance)
         self.retrievers.sort(key=lambda i: i.priority)
 
-    def get(self, url):
-        """Retrieves audio from given URL asynchronously. Returns a Task instance."""
-
+    def canonicalize(self, url):
+        """Canonicalizes the given URL, returning a suitable URI"""
         for retriever in self.retrievers:
-            if retriever.handles(url):
-                self.log.info("Using handler %s for %s", retriever.name, url)
-                task = Task(url, retriever, self)
+            if retriever.handles_url(url):
+                return retriever.canonicalize_url(url)
+
+        raise ValueError("No provider found, cannot canonicalize " + url)
+
+    def get(self, uri):
+        """Retrieves audio from the given URI asynchronously. Returns a Task instance."""
+        service, id_ = uri.split(":", 1)
+        for retriever in self.retrievers:
+            if retriever.__class__.uri_service == service:
+                self.log.info("Using handler %s for %s", retriever.name, uri)
+                task = Task(uri, retriever, self)
                 task.start()
                 return task
 
-        logging.warning("No provider found for URL " + url)
-        raise ValueError("No provider found for URL " + url)
+        logging.warning("No provider found for URI " + uri)
+        raise ValueError("No provider found for URI " + uri)
 
     def has_exception(self):
         """Returns whether or not there are unhandled exceptions in the child exception queue."""

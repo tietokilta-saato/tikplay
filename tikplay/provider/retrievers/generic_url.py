@@ -5,9 +5,8 @@ import json
 import os.path
 import re
 import requests
-from urllib.parse import urlparse
-from tikplay.provider.retriever import Retriever
-from tikplay.utils.shell import call_subprocess
+from provider.retriever import Retriever
+from utils.shell import call_subprocess
 
 
 class GenericURLRetriever(Retriever):
@@ -21,17 +20,21 @@ class GenericURLRetriever(Retriever):
         "application/ogg",
         "application/octet-stream"
     ]
+    uri_service = "url"
 
     def __init__(self, conf):
         super(GenericURLRetriever, self).__init__(conf)
         self.name = "GenericURL"
+        self.priority = 9001  # This is a generic handler, so we want a low priority for it (big = lower priority)
 
-    def handles(self, url):
-        """
-        The handler handles everything that seems to be a valid URL.
-        """
-        scheme, *_rest = urlparse(url)
-        return scheme != ""
+    def handles_url(self, url):
+        return True
+
+    def canonicalize_url(self, url):
+        if not self.handles_url(url):
+            raise ValueError("Invalid URL: " + url)
+        # This is a bit icky, but practically good enough.
+        return "url:" + url
 
     @staticmethod
     def is_valid_mime_type(url):
@@ -41,16 +44,20 @@ class GenericURLRetriever(Retriever):
     def sanitize(url):
         return re.sub(r'[^a-zA-Z1-9]', '', url)
 
-    def get(self, url):
+    def get(self, uri):
+        _, url = uri.split(":", 1)
+        self.log.debug("Getting URL " + url)
         req = requests.head(url)
         if req.status_code != 200:
+            self.log.warning("Non-200 return code from %s", url)
             raise ValueError("Non-200 HTTP response code")
         if not self.is_valid_mime_type(req.headers["content-type"]):
+            self.log.warning("Invalid MIME type from %s: %s", url, req.headers["content-type"])
             raise ValueError("Unsupported content type: " + req.headers["content-type"])
 
         req = requests.get(url)
-        download_file = os.path.join(self.conf["download_dir"], "GenericURL-" + self.sanitize(url))
-        outfile = os.path.join(self.conf["download_dir"], self.sanitize(url) + ".mp3")
+        download_file = os.path.join(os.path.expanduser(self.conf["download_dir"]), "GenericURL-" + self.sanitize(url))
+        outfile = os.path.join(os.path.expanduser(self.conf["download_dir"]), self.sanitize(url) + ".mp3")
         with open(download_file, "wb") as f:
             f.write(req.content)
 
@@ -59,10 +66,12 @@ class GenericURLRetriever(Retriever):
         proc = call_subprocess("ffprobe", "-v", "quiet", "-show_format", "-of", "json", download_file)
         out = json.loads(proc.stdout.read().decode())
         if out["format"]["format_name"] == "mp3":
+            self.log.debug("File is already an MP3, renaming to %s", outfile)
             os.rename(download_file, outfile)
             return outfile
 
         # Convert to MP3
+        self.log.debug("Converting file to MP3")
         call_subprocess("ffmpeg", "-i", download_file, "-acodec", "libmp3lame", "-ab", "256k", outfile)
         os.unlink(download_file)
         return outfile

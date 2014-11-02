@@ -1,17 +1,19 @@
 import argparse
+import logging
 import os
-import server
+
+import mpd
 from flask import Flask
 from flask.ext import restful
-import mpd
-import configuration
-import database
-from database import models
-from database import interface
+
 import audio
 import cache
+import server
+import watcher
 
-__author__ = 'Jami Lindh'
+logging.basicConfig(
+    level=logging.DEBUG
+)
 
 # Parse args
 _argparser = argparse.ArgumentParser()
@@ -53,27 +55,40 @@ if args.daemon:
         print('Fork failed: {0} ({1})'.format(e.errno, e.strerror))
         sys.exit(1)
 
+# Ensure that the cache directory and the subdirectory for file uploads (ie. sha1) exist
+args.song_dir = os.path.expanduser(args.song_dir)
+if not os.path.exists(args.song_dir):
+    os.makedirs(args.song_dir)
+if not os.path.exists(os.path.join(args.song_dir, "sha1")):
+    os.makedirs(os.path.join(args.song_dir, "sha1"))
+
 # Init classes
-_db = database.session
-_db_model = models.Song()
-_database_interface = interface.DatabaseInterface(db=_db, model=_db_model)
-_cache_handler = cache.Handler(di_cls=_database_interface)
-_audio_api = audio.API(media_cls=mpd, mpd_addr=("localhost", 6600))
+task_dict = {}
+cache_handler = cache.Cache(args.song_dir)
+audio_api = audio.API(media_cls=mpd, mpd_addr=("localhost", 6600))
+
+# Init the watcher
+watcher_thread = watcher.TaskWatcher(task_dict, cache_handler, audio_api)
+watcher_thread.start()
 
 # Init flask
 url_base = server.url_base
 
-_tikserver = Flask('tikplay')
-_tikserver.debug = args.debug_flask
-_tikserver.testing = args.testing_flask
-_tikserver.config['cache_handler'] = _cache_handler
-_tikserver.config['audio_api'] = _audio_api
-_tikserver.config['UPLOAD_FOLDER'] = workdir
+tikserver = Flask('tikplay')
+tikserver.debug = args.debug_flask
+tikserver.testing = args.testing_flask
 
-_tikserver_api = restful.Api(_tikserver)
-_tikserver_api.add_resource(server.File, '{}/file'.format(url_base))
-_tikserver_api.add_resource(server.NowPlaying, '{}/song'.format(url_base))
-_tikserver_api.add_resource(server.PlaySong, '{}/song/<string:song_sha1>'.format(url_base))
-_tikserver_api.add_resource(server.Queue, '{}/queue'.format(url_base))
-_tikserver_api.add_resource(server.Find, '{}/find/<int:find_type>/<string:find_key>'.format(url_base))
-_tikserver.run(port=args.port)
+tikserver.config['song_dir'] = args.song_dir
+tikserver.config['task_dict'] = task_dict
+tikserver.config['cache_handler'] = cache_handler
+tikserver.config['audio_api'] = audio_api
+tikserver.config['UPLOAD_FOLDER'] = os.path.join(args.song_dir, "sha1")
+
+tikserver_api = restful.Api(tikserver)
+tikserver_api.cache = cache.Cache(args.song_dir)
+tikserver_api.add_resource(server.File, '{}/file'.format(url_base))
+tikserver_api.add_resource(server.Song, '{}/song'.format(url_base))
+tikserver_api.add_resource(server.Queue, '{}/queue'.format(url_base))
+tikserver_api.add_resource(server.Task, '{}/task/<int:id_>'.format(url_base))
+tikserver_api.add_resource(server.Find, '{}/find/<int:find_type>/<string:find_key>'.format(url_base))
+tikserver.run(port=args.port)

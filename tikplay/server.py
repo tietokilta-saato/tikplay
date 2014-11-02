@@ -1,9 +1,16 @@
+import json
+import os
+from hashlib import sha1
+
 from flask import request, jsonify, current_app
 from flask.ext.restful import Resource
 from werkzeug.utils import secure_filename
-import os
-from hashlib import sha1
-import re
+
+import cache
+import traceback
+from provider.provider import Provider
+from provider.task import TaskState
+from utils import is_uri, is_url
 
 
 __version__ = 'v1.0'
@@ -24,10 +31,10 @@ class File(Resource):
         if file and self.__allowed_file(file):
             calced_hash = sha1(file.stream.read()).hexdigest()
             file.stream.seek(0)
-            _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1])
+            _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1]) + ".mp3"
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], _filename))
             current_app.config['audio_api'].update()
-            return jsonify(filename=filename, saved=True, key=calced_hash,
+            return jsonify(filename=filename, saved=True, key="sha1:" + calced_hash,
                            text="File successfully saved as {}. Use this as key to play this file".format(calced_hash))
 
         elif not self.__allowed_file(file):
@@ -36,22 +43,6 @@ class File(Resource):
         else:
             return jsonify(filename="", saved=False,
                            text="You have to send a file, e.g. curl -X POST -F file=\"@<file>\" <server_address>")
-
-
-class NowPlaying(Resource):
-    def get(self):
-        """
-        GET now playing song
-        """
-        audio_api = current_app.config['audio_api']
-        return jsonify(text=audio_api.now_playing(queue_length=1))
-
-    def delete(self):
-        """
-        DELETE now playing song (i.e. skip a song)
-        """
-        audio_api = current_app.config['audio_api']
-        return jsonify(text=audio_api.next_())
 
 
 class Queue(Resource):
@@ -67,49 +58,83 @@ class Queue(Resource):
         return jsonify(text=audio_api.kill())
 
 
-class PlaySong(Resource):
-    prov = None
-    sha1_re = re.compile('^[0-9a-f]{40}$')
+class Song(Resource):
+    def __init__(self):
+        super()
+        self.prov = Provider(conf={'download_dir': current_app.config['song_dir']})
+        self.cache = current_app.config['cache_handler']
 
-    def is_sha1(self, sha1_candidate):
-        return self.sha1_re.match(sha1_candidate)
-
-    def init_providers(self):
-        from provider.provider import Provider
-        self.prov = Provider(conf={'download_dir': current_app.config['UPLOAD_FOLDER']})
-
-    def post(self, song_sha1):
+    def get(self):
         """
-        POST a new song to play. Do
-
-        Keyword arguments:
-            song_sha1: identifying SHA1 hash calculated from the file
+        GET now playing song
         """
         audio_api = current_app.config['audio_api']
-        result = None
-        text = ""
-        if not self.is_sha1(song_sha1):
-            if self.prov is None:
-                self.init_providers()
+        return jsonify(text=audio_api.now_playing(queue_length=1))
+
+    def delete(self):
+        """
+        DELETE now playing song (i.e. skip a song)
+        """
+        audio_api = current_app.config['audio_api']
+        return jsonify(text=audio_api.next_())
+
+    def post(self):
+        """
+        POST a new song to play by URI/URL.
+        """
+
+        uri = request.data.decode()
+        if not uri:
+            return jsonify(error=True, text="Invalid URI")
+
+        if is_url(uri):
+            uri = self.prov.canonicalize(uri)
+
+        elif not is_uri(uri):
+            return jsonify(error=True, text="Invalid URI")
+
+        audio_api = current_app.config['audio_api']
+        fn = self.cache.get_song(uri)
+        if fn is not None:
             try:
                 if song_sha1.startswith('yt:'):
                     self.prov.get('https://youtu.be/{}'.format(song_sha1))
-                else:
-                    # Generic case with any URL
-                    self.prov.get(song_sha1)
             except ValueError as e:
                 text = str(e)
 
         try:
-            result = audio_api.play(song_sha1)
-            if result is None:
-                text = "Song not found, please upload it"
-        except Exception as e:
-            text = str(e)
+            task = self.prov.get(uri)
+        except ValueError:
+            return jsonify(error=True, text="No provider found for " + uri)
 
-        if result is None:
-            return jsonify(error=True, text=text)
-        return jsonify(sha1=song_sha1, playing=result, error=False)
+        if task.state == TaskState.done:  # Some tasks might be instantaneous
+            try:
+                result = audio_api.play(fn)
+                if result is None:
+                    return jsonify(error=True, text="Unknown error while playing the song")
+                return jsonify(error=False, text="OK")
+            except Exception as e:
+                return jsonify(error=True, text=traceback.format_exc())
+
+        if task.state == TaskState.exception:
+            return jsonify(error=True, text=traceback.format_exception_only(type(task.exception), task.exception))
+
+        current_app.config['task_dict'][task.id] = task
+        return jsonify(error=False, task=task.id, text="Task received")
+
+
+class Task(Resource):
+    def get(self, id_):
+        """
+        GET information about a task.
+        :param id_: Task ID
+        :return:
+        """
+
+        task = current_app.config['task_dict'].find(id_, None)
+        if task is None:
+            return jsonify(error=True, text="Task not found")
+        return jsonify(id=task.id, state=task.state, url=task.url)
 
 
 class Find(Resource):

@@ -20,7 +20,9 @@ class Cache:
         service, id_ = uri.split(":", 1)
         id_ = self.sanitize(id_)
 
-        fn = os.path.join(self.dir, service, id_) + ".mp3"
+        if not id_.endswith(".mp3"):
+            id_ += ".mp3"
+        fn = os.path.join(self.dir, service, id_)
         if os.path.exists(fn):
             self.log.debug("%s was found in the cache", fn)
             return os.path.join(service, id_)
@@ -52,6 +54,9 @@ class Cache:
             self.log.info("Cache directory for %s does not exist, creating", service)
             os.mkdir(service_dir)
 
-        new_fn = os.path.join(service_dir, id_) + ".mp3"  # A small hack so mpd reads the file despite the actual format
+        # A small hack so mpd reads the file despite the actual format
+        if not id_.endswith(".mp3"):
+            id_ += ".mp3"
+        new_fn = os.path.join(service_dir, id_)
         os.rename(os.path.expanduser(fn), os.path.expanduser(new_fn))
         return os.path.join(service, id_)

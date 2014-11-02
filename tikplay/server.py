@@ -4,9 +4,9 @@ from hashlib import sha1
 
 from flask import request, jsonify, current_app
 from flask.ext.restful import Resource
+import time
 from werkzeug.utils import secure_filename
 
-import cache
 import traceback
 from audio import play_file
 from provider.provider import Provider
@@ -32,9 +32,12 @@ class File(Resource):
         if file and self.__allowed_file(file):
             calced_hash = sha1(file.stream.read()).hexdigest()
             file.stream.seek(0)
-            _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1]) + ".mp3"
+            _filename = "{}.{}".format(calced_hash, file.filename.split('.')[-1])
+            if not _filename.endswith(".mp3"):
+                _filename += ".mp3"
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], _filename))
             current_app.config['audio_api'].update()
+            time.sleep(2.0)  # Whoo, ugly hacks
             return jsonify(filename=filename, saved=True, key="sha1:" + calced_hash,
                            text="File successfully saved as {}. Use this as key to play this file".format(calced_hash))
 
@@ -128,7 +131,7 @@ class Task(Resource):
         :return:
         """
 
-        task = current_app.config['task_dict'].get(id_, None)
+        task = current_app.config['task_dict'].get(int(id_), None)
         if task is None:
             return jsonify(error=True, text="Task not found")
         return jsonify(id=task.id, state=task.state, url=task.url)

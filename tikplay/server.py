@@ -50,7 +50,7 @@ class File(Resource):
 
 
 class Queue(Resource):
-    def get(self, length=10):
+    def get(self, length):
         """
         GET the now_playing queue
         """

@@ -100,6 +100,7 @@ class API():
         self._check_connection()
         self.player.next()
         self.set_idle()
+        return self.now_playing(1)[0]
 
     def pause(self):
         self._check_connection()

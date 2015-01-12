@@ -50,12 +50,12 @@ class File(Resource):
 
 
 class Queue(Resource):
-    def get(self):
+    def get(self, length):
         """
         GET the now_playing queue
         """
         audio_api = current_app.config['audio_api']
-        return jsonify(text=audio_api.now_playing())
+        return jsonify(text=audio_api.now_playing(queue_length=length))
 
     def delete(self):
         audio_api = current_app.config['audio_api']

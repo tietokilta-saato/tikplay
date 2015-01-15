@@ -98,8 +98,14 @@ class API():
 
     def next_(self):
         self._check_connection()
-        self.player.next()
-        res = self.now_playing(1)[0]
+
+        if len(self.player.playlistinfo()) <= 1:
+            self.player.clear()
+            res = None
+        else:
+            self.player.next()
+            res = self.now_playing(1)[0]
+
         self.set_idle()
         return res
 

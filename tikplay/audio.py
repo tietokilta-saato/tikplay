@@ -99,23 +99,30 @@ class API():
     def next_(self):
         self._check_connection()
         self.player.next()
+        res = self.now_playing(1)[0]
         self.set_idle()
-        return self.now_playing(1)[0]
+        return res
 
     def pause(self):
         self._check_connection()
         self.player.pause()
+        res = self.player.status()['state'] == 'pause' or self.player.status()['state'] == 'stop'
         self.set_idle()
+        return res
 
     def resume(self):
         self._check_connection()
         self.player.play()
+        res = self.player.status()['state'] == 'play' or self.player.status()['state'] == 'stop'
         self.set_idle()
+        return res
 
     def kill(self):
         self._check_connection()
         self.player.clear()
+        res = len(self.player.playlistinfo()) == 0
         self.set_idle()
+        return res
 
     def update(self, directory=None):
         self._check_connection()

@@ -43,6 +43,8 @@ class Task(Thread):
             self.state = TaskState.ready
 
         except Exception as e:
+            self.log.error("Exception in task %d (%s):", self.id, self.uri)
+            self.log.exception(e)
             self.state = TaskState.exception
             self.exception = e
             self.provider.child_exception_queue.put((self, e))

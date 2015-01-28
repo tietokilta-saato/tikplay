@@ -24,6 +24,7 @@ class TaskWatcher(Thread):
 
     def run(self):
         self.log.info("Task watcher running")
+        to_delete = []
         while True:
             time.sleep(3)
             for id_, task in self.tasks.items():
@@ -53,3 +54,14 @@ class TaskWatcher(Thread):
                     except Exception as e:
                         self.log.exception(e)
                         task.state = TaskState.exception
+
+                elif task.state == TaskState.exception:
+                    self.log.error("Exception in task %d (%s):", task.id, task.uri)
+                    self.log.exception(task.exception)
+                    to_delete.append(id_)
+
+            if to_delete:
+                for id_ in to_delete:
+                    self.log.warn("Removing task %d from queue due to an exception")
+                    del self.tasks[id_]
+                to_delete = []

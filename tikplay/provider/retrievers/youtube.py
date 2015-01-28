@@ -4,6 +4,7 @@
 import os.path
 import urllib.parse
 import youtube_dl
+import youtube_dl.postprocessor
 from ..retriever import Retriever
 
 
@@ -74,10 +75,10 @@ class YouTubeRetriever(Retriever):
         }
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.add_post_processor(youtube_dl.FFmpegExtractAudioPP(
+            ydl.add_post_processor(youtube_dl.postprocessor.FFmpegExtractAudioPP(
                 preferredcodec="mp3",
                 preferredquality="4"
             ))
-            ydl.add_post_processor(youtube_dl.FFmpegMetadataPP())
+            ydl.add_post_processor(youtube_dl.postprocessor.FFmpegMetadataPP())
             ydl.download(["https://youtu.be/" + video_id])
         return outfile

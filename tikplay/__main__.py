@@ -86,6 +86,7 @@ tikserver.testing = args.testing_flask
 
 tikserver.config['song_dir'] = args.song_dir
 tikserver.config['task_dict'] = task_dict
+tikserver.config['task_lock'] = watcher_thread.task_lock
 tikserver.config['cache_handler'] = cache_handler
 tikserver.config['audio_api'] = audio_api
 tikserver.config['songlogger'] = songlogger

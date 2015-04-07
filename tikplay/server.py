@@ -117,9 +117,10 @@ class Song(Resource):
         if task.state == TaskState.exception:
             return jsonify(error=True, text=traceback.format_exception_only(type(task.exception), task.exception))
 
-        current_app.config['task_dict'][task.id] = task
         task.metadata['user'] = data.get('user', 'anonymous')
         task.metadata['original_filename'] = data.get('filename', uri)
+        with current_app.config['task_lock']:
+            current_app.config['task_dict'][task.id] = task
         return jsonify(error=False, task=task.id, text="Task received, fetching song")
 
 

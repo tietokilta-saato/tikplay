@@ -13,5 +13,5 @@ class SongLogger:
         line = "{0:%Y}-{0:%m}-{0:%d}T{0:%H}:{0:%M}:{0:%S}Z {1} {2}\n".format(
             datetime.datetime.utcnow(), user, song
         )
-        self.fp.write(line.encode('utf8', error='backslashreplace'))
+        self.fp.write(line.encode('utf8', errors='backslashreplace'))
         self.fp.flush()

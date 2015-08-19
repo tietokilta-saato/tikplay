@@ -21,7 +21,7 @@ ALLOWED_EXTENSIONS = {'mp3', 'ogg', 'wav'}
 
 class File(Resource):
     def __allowed_file(self, file):
-        return file.filename.split('.')[-1] in ALLOWED_EXTENSIONS
+        return file.filename.split('.')[-1].lower() in ALLOWED_EXTENSIONS
 
     def post(self):
         """
@@ -42,7 +42,8 @@ class File(Resource):
                            text="File successfully saved as {}. Use this as key to play this file".format(calced_hash))
 
         elif not self.__allowed_file(file):
-            return jsonify(filename=filename, saved=False, text="Filetype not allowed!")
+            return jsonify(filename=filename, saved=False,
+                           text="Filetype not allowed! (allowed: {})".format(", ".join(ALLOWED_EXTENSIONS)))
 
         else:
             return jsonify(filename="", saved=False,

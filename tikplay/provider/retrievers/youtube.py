@@ -71,14 +71,16 @@ class YouTubeRetriever(Retriever):
 
         ydl_opts = {
             "logger": self.log,
-            "outtmpl": os.path.join(self.conf["download_dir"], "%(id)s.%(ext)s")
+            "outtmpl": os.path.join(self.conf["download_dir"], "%(id)s.%(ext)s"),
+            "postprocessors": [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '256'
+            }, {
+                'key': 'FFmpegMetadata'
+            }]
         }
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.add_post_processor(youtube_dl.postprocessor.FFmpegExtractAudioPP(
-                preferredcodec="mp3",
-                preferredquality="4"
-            ))
-            ydl.add_post_processor(youtube_dl.postprocessor.FFmpegMetadataPP())
-            ydl.download(["https://youtu.be/" + video_id])
+           ydl.download(["https://youtu.be/" + video_id])
         return outfile
